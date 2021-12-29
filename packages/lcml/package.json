@@ -1,0 +1,31 @@
+{
+  "name": "lcml",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "version": "1.0.0",
+  "description": "Low-Code Markup Language (DSL) for Values with Dynamic Expressions",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "module": "./lib/index.js",
+  "scripts": {
+  },
+  "files": [
+    "dist",
+    "lib",
+    "!**/*.map",
+    "!**/*.test.js",
+    "!**/*.test.d.ts"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lyonbot/lcml.git"
+  },
+  "keywords": ["dsl", "markup", "json", "dynamic", "expression", "interpolate", "readable", "human-readable"],
+  "author": "lyonbot",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/lyonbot/lcml/issues"
+  },
+  "homepage": "https://github.com/lyonbot/lcml/tree/master/packages/lcml#readme"
+}
