@@ -1,5 +1,8 @@
 # LCML -- JSON with expressions
 
+[![npm](https://img.shields.io/npm/v/lcml)](https://www.npmjs.com/package/lcml) 
+![npm bundle size](https://img.shields.io/bundlephobia/min/lcml) ![npm type definitions](https://img.shields.io/npm/types/lcml) ![dependencies](https://img.shields.io/badge/dependencies-0-green)
+
 Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a superset of human readable JSON.
 
 | Written in LCML | Output JavaScript | Inferred Type Information |
