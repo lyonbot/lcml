@@ -1,0 +1,33 @@
+body {
+  margin: 0;
+}
+
+.app {
+  display: grid;
+  height: 100vh;
+  grid-template-columns: 300px 1fr 1fr;
+  grid-template-areas:
+    'tree editor sidebar'
+    'tree output sidebar';
+  overflow: hidden;
+}
+
+.nodeTreeView {
+  grid-area: tree;
+  overflow: auto;
+}
+
+.editor {
+  grid-area: editor;
+}
+
+.output {
+  grid-area: output;
+  overflow: auto;
+}
+
+/* -------------------------- */
+
+.cm-highlightPart {
+  background-color: #f906;
+}

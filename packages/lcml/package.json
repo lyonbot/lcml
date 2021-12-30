@@ -9,6 +9,11 @@
   "typings": "./dist/index.d.ts",
   "module": "./lib/index.js",
   "scripts": {
+    "test": "jest",
+    "prepare": "npm run clean && npm run build",
+    "clean": "rimraf dist temp etc lib *.tsbuildinfo && mkdir etc",
+    "dev": "rimraf dist && mkdir dist && ( echo \"export * from '../lib'\" | tee dist/index.js dist/index.d.ts ) && tsc -b -w",
+    "build": "tsc -b && api-extractor run --local && esbuild --bundle lib/index.js --outdir=dist --minify --sourcemap --format=cjs"
   },
   "files": [
     "dist",
@@ -21,7 +26,18 @@
     "type": "git",
     "url": "git+https://github.com/lyonbot/lcml.git"
   },
-  "keywords": ["dsl", "markup", "json", "dynamic", "expression", "interpolate", "readable", "human-readable"],
+  "keywords": [
+    "dsl",
+    "markup",
+    "lowcode",
+    "low-code",
+    "json",
+    "dynamic",
+    "expression",
+    "interpolate",
+    "readable",
+    "human-readable"
+  ],
   "author": "lyonbot",
   "license": "MIT",
   "bugs": {

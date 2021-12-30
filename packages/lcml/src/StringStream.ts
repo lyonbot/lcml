@@ -38,7 +38,7 @@ export class StringStream {
   match(pattern: RegExp | string): RegExpMatchArray | null;
   match<T>(pattern: RegExp | string, preprocess: (result: RegExpMatchArray) => T): T | null;
   match(pattern: RegExp | string, preprocess?: (result: RegExpMatchArray) => any) {
-    var ans: null | any[] = null;
+    let ans: null | any[] = null;
 
     if (typeof pattern === 'string') {
       if (this.str.slice(0, pattern.length) === pattern) {
@@ -74,7 +74,7 @@ export class StringStream {
    * @param brackets - bracket map `{ "(": ")", "[": "]" }`
    * @param escapeChars - the (back)slash
    */
-  balanceMatch(brackets: Record<string, string>, escapeChars: string = '\\') {
+  balanceMatch(brackets: Record<string, string>, escapeChars = '\\') {
     const stack = [] as string[];
     let i = 0;
     for (; i < this.str.length; i++) {
@@ -105,7 +105,7 @@ export class StringStream {
     let ans: null | { needle: string; pos: number } = null;
     for (let i = 0; i < needles.length; i++) {
       const needle = needles[i];
-      let pos: number = -1;
+      let pos = -1;
       while ((pos = this.str.indexOf(needle, pos + 1)) !== -1) {
         if (this.str[pos - 1] !== escapeChar && (!ans || ans.pos > pos)) {
           ans = { pos, needle };

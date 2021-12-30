@@ -1,0 +1,31 @@
+.np-node {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  padding: 4px;
+  position: relative;
+  padding-left: 24px;
+}
+
+.np-node.isHovering {
+  border-color: #999;
+}
+
+.np-title {
+  font-size: 14px;
+}
+
+.np-type {
+  font-size: 12px;
+  border-radius: 2px;
+  background-color: #999;
+  color: #fff;
+  margin-right: 4px;
+  padding: 2px 4px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.np-children {
+  margin-top: 4px;
+}

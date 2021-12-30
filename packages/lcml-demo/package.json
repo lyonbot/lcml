@@ -1,0 +1,25 @@
+{
+  "name": "lcml-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "npm run clean && npm run build",
+    "clean": "rimraf dist",
+    "build": "esbuild src/index.tsx --bundle --outdir=dist",
+    "dev": "npm run build -- --sourcemap --servedir=."
+  },
+  "dependencies": {
+    "@codemirror/basic-setup": "^0.19.1",
+    "@codemirror/commands": "^0.19.6",
+    "@codemirror/lang-javascript": "^0.19.3",
+    "@codemirror/language": "^0.19.7",
+    "@codemirror/state": "^0.19.6",
+    "@codemirror/text": "^0.19.5",
+    "@codemirror/view": "^0.19.37",
+    "lcml": "workspace:*",
+    "preact": "^10.5.15"
+  },
+  "author": "lyonbot",
+  "license": "MIT"
+}
