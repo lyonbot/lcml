@@ -42,7 +42,10 @@ importers:
       '@codemirror/state': ^0.19.6
       '@codemirror/text': ^0.19.5
       '@codemirror/view': ^0.19.37
+      '@types/marked': ^4.0.1
+      github-markdown-css: ^5.1.0
       lcml: workspace:*
+      marked: ^4.0.8
       preact: ^10.5.15
     dependencies:
       '@codemirror/basic-setup': mirrors.tencent.com/@codemirror/basic-setup/0.19.1
@@ -52,8 +55,12 @@ importers:
       '@codemirror/state': mirrors.tencent.com/@codemirror/state/0.19.6
       '@codemirror/text': mirrors.tencent.com/@codemirror/text/0.19.5
       '@codemirror/view': mirrors.tencent.com/@codemirror/view/0.19.37
+      github-markdown-css: mirrors.tencent.com/github-markdown-css/5.1.0
       lcml: link:../lcml
+      marked: mirrors.tencent.com/marked/4.0.8
       preact: mirrors.tencent.com/preact/10.5.15
+    devDependencies:
+      '@types/marked': mirrors.tencent.com/@types/marked/4.0.1
 
 packages:
 
@@ -2577,6 +2584,12 @@ packages:
     version: 7.0.9
     dev: true
 
+  mirrors.tencent.com/@types/marked/4.0.1:
+    resolution: {integrity: sha512-ZigEmCWdNUU7IjZEuQ/iaimYdDHWHfTe3kg8ORfKjyGYd9RWumPoOJRQXB0bO+XLkNwzCthW3wUIQtANaEZ1ag==, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/@types%2fmarked/-/marked-4.0.1.tgz}
+    name: '@types/marked'
+    version: 4.0.1
+    dev: true
+
   mirrors.tencent.com/@types/node/12.20.24:
     resolution: {integrity: sha512-yxDeaQIAJlMav7fH5AQqPH1u8YIuhYJXYBzxaQ4PifsU0GDO38MSdmEDeRlIxrKbC6NbEaaEHDanWb+y30U8SQ==, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/@types%2fnode/-/node-12.20.24.tgz}
     name: '@types/node'
@@ -4057,6 +4070,12 @@ packages:
       get-intrinsic: mirrors.tencent.com/get-intrinsic/1.1.1
     dev: true
 
+  mirrors.tencent.com/github-markdown-css/5.1.0:
+    resolution: {integrity: sha512-QLtORwHHtUHhPMHu7i4GKfP6Vx5CWZn+NKQXe+cBhslY1HEt0CTEkP4d/vSROKV0iIJSpl4UtlQ16AD8C6lMug==, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/github-markdown-css/-/github-markdown-css-5.1.0.tgz}
+    name: github-markdown-css
+    version: 5.1.0
+    dev: false
+
   mirrors.tencent.com/glob-parent/5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/glob-parent/-/glob-parent-5.1.2.tgz}
     name: glob-parent
@@ -5298,6 +5317,14 @@ packages:
     dependencies:
       tmpl: mirrors.tencent.com/tmpl/1.0.5
     dev: true
+
+  mirrors.tencent.com/marked/4.0.8:
+    resolution: {integrity: sha512-dkpJMIlJpc833hbjjg8jraw1t51e/eKDoG8TFOgc5O0Z77zaYKigYekTDop5AplRoKFGIaoazhYEhGkMtU3IeA==, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/marked/-/marked-4.0.8.tgz}
+    name: marked
+    version: 4.0.8
+    engines: {node: '>= 12'}
+    hasBin: true
+    dev: false
 
   mirrors.tencent.com/memorystream/0.3.1:
     resolution: {integrity: sha1-htcJCzDORV1j+64S3aUaR93K+bI=, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/memorystream/-/memorystream-0.3.1.tgz}

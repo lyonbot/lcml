@@ -1,0 +1,42 @@
+name: main
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # node-version: [12.x, 14.x, 16.x]
+        node-version: [14.x]
+    
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - name: Build
+      run: |
+        npm install -g pnpm
+        pnpm install
+        npm run build
+
+        # cleanup for github pages
+        rm -rf packages/lcml-demo/src packages/lcml-demo/node_modules || true
+
+    - name: Publish to GitHub Pages
+      uses: tsunematsu21/actions-publish-gh-pages@v1.0.2
+      if: ${{ github.event_name == 'push' }}
+      continue-on-error: true
+      with:
+        dir: ./packages/lcml-demo
+        branch: gh-pages
+        token: ${{ secrets.ACCESS_TOKEN }}

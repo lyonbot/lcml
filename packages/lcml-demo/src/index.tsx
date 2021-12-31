@@ -10,7 +10,13 @@ import { ActiveNode, NodePresent } from './NodePresent';
 import "./index.css"
 import { ResultJS } from './ResultJS';
 
+import "github-markdown-css/github-markdown-light.css"
+import readme from 'lcml/README.md';
+import { marked } from 'marked';
+
 const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' })
+
+const readmeNode = <article class="markdown-body" dangerouslySetInnerHTML={{ __html: marked(readme) }}></article>
 
 const setHighlightSpan = StateEffect.define<{ from: number, to: number } | { remove: true }>()
 const highlightSpanField = StateField.define<DecorationSet>({
@@ -208,6 +214,10 @@ const App = () => {
           onMouseLeave={unsetHighlightNode}
         />}
       </ActiveNode.Provider>
+    </div>
+
+    <div className="sidebar">
+      {readmeNode}
     </div>
   </div>
 }

@@ -19,6 +19,13 @@ body {
   overflow: auto;
 }
 
+.sidebar {
+  grid-area: sidebar;
+  overflow: auto;
+  padding: 16px;
+  border-left: 1px solid #eee;
+}
+
 .editor {
   grid-area: editor;
 }

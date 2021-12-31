@@ -6,8 +6,8 @@
   "scripts": {
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf dist",
-    "build": "esbuild src/index.tsx --bundle --outdir=dist",
-    "dev": "npm run build -- --sourcemap --servedir=."
+    "build": "esbuild src/index.tsx --bundle --outdir=dist --minify --loader:.md=text",
+    "dev": "npm run build -- --sourcemap --servedir=. --loader:.md=text"
   },
   "dependencies": {
     "@codemirror/basic-setup": "^0.19.1",
@@ -17,9 +17,14 @@
     "@codemirror/state": "^0.19.6",
     "@codemirror/text": "^0.19.5",
     "@codemirror/view": "^0.19.37",
+    "github-markdown-css": "^5.1.0",
     "lcml": "workspace:*",
+    "marked": "^4.0.8",
     "preact": "^10.5.15"
   },
   "author": "lyonbot",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/marked": "^4.0.1"
+  }
 }

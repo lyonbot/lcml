@@ -5,6 +5,8 @@
 
 Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a superset of human readable JSON.
 
+[ [Playground Demo](https://lyonbot.github.io/lcml/) | [GitHub](https://github.com/lyonbot/lcml) ]
+
 | Written in LCML           | Output JavaScript               | Inferred Type Information |
 | ------------------------- | ------------------------------- | ------------------------- |
 | `{{ foo.bar }}`           | `foo.bar`                       | unknown                   |
@@ -108,7 +110,7 @@ function composedGetter() {
   const state = getState();
 
   // return (/* put the generated code here! */);
-  return ('Hello, ' + toString(user.name));
+  return 'Hello, ' + toString(user.name);
 }
 ```
 
