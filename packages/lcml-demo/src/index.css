@@ -5,7 +5,9 @@ body {
 .app {
   display: grid;
   height: 100vh;
+  gap: 8px;
   grid-template-columns: 300px 1fr 1fr;
+  grid-template-rows: min-content 1fr;
   grid-template-areas:
     'tree editor sidebar'
     'tree output sidebar';
@@ -26,7 +28,27 @@ body {
   overflow: auto;
 }
 
+.exampleButtons {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.messageBar {
+  margin-bottom: 4px;
+  background-color: #cef;
+  padding: 6px 10px;
+}
+
+.messageBar.isError {
+  background-color: #f99;
+}
+
 /* -------------------------- */
+
+.cm-editor {
+  outline: 1px solid #999;
+}
 
 .cm-highlightPart {
   background-color: #f906;

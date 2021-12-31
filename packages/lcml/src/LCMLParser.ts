@@ -3,7 +3,7 @@ import { LCMLParseOptions, LCMLParseResult, ExpressionSegmentInfo, LCMLNodeInfo,
 import { LCMLParseError } from './LCMLParseError';
 import { StringStream } from './StringStream';
 
-const spaces = (n: number) => (n <= 0 ? '' : Array.from({ length: n }, () => ' ').join(''));
+const indent = (n: number) => (n <= 0 ? '' : Array.from({ length: n }, () => '  ').join(''));
 
 const enum StateType {
   OUTMOST_BEGIN,
@@ -50,7 +50,7 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
     {
       type: StateType.OUTMOST_BEGIN,
       start: 0,
-      newLine: '',
+      newLine: '\n',
       onPop: () => void 0,
     },
   ];
@@ -98,7 +98,7 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
 
   const consumeCommentAndSpaces = (): void => {
     stream.skipSpace();
-    while (stream.match(/^\/\*.*?(\*\/|$)/) || stream.match(/^\/\/.*$/m)) {
+    while (stream.match(/^\/\*.*?(\*\/|$)/) || stream.match(/^\/\/.*([\r\n]+|$)/)) {
       stream.skipSpace();
     }
   };
@@ -113,24 +113,37 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
     const start = stream.pos;
 
     if (!stream.match('{{')) return;
-    const ending = stream.str.indexOf('}}');
-    if (ending === -1) throw new Error('Unfinished expression. Expect }}');
+    const relativeEnd = stream.str.indexOf('}}');
+    if (relativeEnd === -1) throw new Error('Unfinished expression. Expect }}');
 
-    const str = stream.str.slice(0, ending);
-    stream.precede(ending + 2);
+    stream.precede(relativeEnd + 2);
+    const end = relativeEnd + start + 4; // 4 = {{ + }}
 
-    const expression: ExpressionSegmentInfo = {
-      start,
-      end: ending + 2,
-      type: 'unknown',
-      expression: str,
-      rawExpression: str,
-    };
+    // try reusing parsed expression
+    // this is useful for errorRecover
+    let expression =
+      expressions.length > 0 &&
+      expressions[expressions.length - 1]!.end >= end &&
+      expressions.find(e => e.start === start && e.end === end);
 
-    // call custom callback
-    if (opts.handleExpression) opts.handleExpression(expression);
+    // new expression
+    if (!expression) {
+      const str = stream.raw.slice(start + 2, end - 2);
 
-    expressions.push(expression);
+      expression = {
+        start,
+        end,
+        type: 'unknown',
+        expression: str,
+        rawExpression: str,
+      };
+
+      // call custom callback
+      if (opts.handleExpression) opts.handleExpression(expression);
+
+      expressions.push(expression);
+    }
+
     return { js: `(${expression.expression})`, type: expression.type, expression };
   };
 
@@ -234,11 +247,11 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
       pushState({
         start,
         type: StateType.IN_ARRAY,
-        newLine: `\n${spaces(stateStack.length)}`,
+        newLine: `\n${indent(stateStack.length)}`,
         size: 0,
         arrItemLoaded: false,
         onPop(self) {
-          body.push((self.size ? `\n${spaces(stateStack.length - 1)}` : '') + ']');
+          body.push((self.size ? `\n${indent(stateStack.length - 1)}` : '') + ']');
         },
       });
       return { js: '[', type: 'array' };
@@ -248,10 +261,10 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
       pushState({
         start,
         type: StateType.IN_OBJECT_KEY,
-        newLine: `\n${spaces(stateStack.length)}`,
+        newLine: `\n${indent(stateStack.length)}`,
         size: 0,
         onPop(self) {
-          body.push((self.size ? `\n${spaces(stateStack.length - 1)}` : '') + '}');
+          body.push((self.size ? `\n${indent(stateStack.length - 1)}` : '') + '}');
         },
       });
       return { js: '{', type: 'object' };
@@ -275,8 +288,8 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
   // -------------------------
   let prevStart = -1;
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
+  let parsing = true;
+  while (parsing) {
     const startBeforeSpace = stream.pos;
 
     consumeCommentAndSpaces();
@@ -298,18 +311,40 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
 
       switch (state.type) {
         case StateType.OUTMOST_BEGIN: {
-          state.type = StateType.VOID;
+          // to make recovering work, remember the start position
+          state.start = start;
 
           if (maybePushJS(consumeValue())) {
             pushNode('', { start, type: lastPushed.type, expression: lastPushed.expression });
+            state.type = StateType.VOID;
             continue;
           }
 
-          throw new Error('Expect a value');
+          // first token is invalid. treat as string
+
+          if (!maybePushJS(consumeStrContent(''))) throw new Error('Invalid input');
+          pushNode('', { start, type: lastPushed.type });
+          popNode({ end: stream.pos });
+          break;
         }
 
         case StateType.VOID: {
-          throw new Error('Value is finished');
+          const expression = expressions.length === 1 && expressions[0];
+          if (expression && expression.start === state.start) {
+            // special case that shall be a string:
+            //   {{ expr }}, welcome to visit
+
+            stream.goto(expression.start);
+            body.splice(0);
+            body.push(consumeStrContent('')!.js);
+
+            // fulfill rootNodeInfo
+
+            modNode({ type: 'string', expression: void 0 });
+            break;
+          }
+
+          throw new Error('Parsing finished, expect EOF but read something');
         }
 
         case StateType.IN_OBJECT_KEY: {
@@ -371,10 +406,10 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
 
         case StateType.IN_OBJECT_VALUE: {
           // change state before consuming!
-          state.type = StateType.IN_OBJECT_COMMA;
 
           if (maybePushJS(consumeValue())) {
             modNode({ propertyValueStart: start, type: lastPushed.type, expression: lastPushed.expression });
+            state.type = StateType.IN_OBJECT_COMMA;
             continue;
           }
 
@@ -434,13 +469,67 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
           throw new Error('Unhandled internal status');
       }
     } catch (err) {
-      if (err instanceof Error) throw new LCMLParseError(err, start, stream);
-      else throw err;
+      if (err instanceof Error) {
+        parsing = false;
+        const end = stream.pos;
+
+        switch (opts.recoverFromError || 'no') {
+          case 'no':
+            throw new LCMLParseError(err, start, stream);
+
+          case 'recover':
+            switch (state.type) {
+              case StateType.IN_OBJECT_COLON:
+                body.push(': null /* error recover */');
+                modNode({ type: 'unknown' });
+                break;
+
+              case StateType.IN_OBJECT_VALUE:
+                body.push('null /* error recover */');
+                modNode({ type: 'unknown' });
+                break;
+            }
+
+            while (nodeStack.length) popNode({ end });
+            while (stateStack.length) popState();
+
+            stream.goto(stream.raw.length);
+            break;
+
+          case 'as-string': {
+            // rollback to the beginning and treat whole as string
+
+            const start = stateStack[0]!.start;
+            stream.goto(start);
+
+            // remove all existing code and state
+            nodeStack.splice(0);
+            stateStack.splice(0);
+            body.splice(0);
+
+            // parsing as string content
+
+            const s = consumeStrContent('');
+            body.push(s?.js || '""');
+
+            // fulfill rootNodeInfo
+
+            rootNodeInfo = {
+              start,
+              end: stream.pos,
+              type: 'string',
+            };
+          }
+        }
+
+        break;
+      }
+      throw err;
     }
   }
 
   return {
-    body: body.join(''),
+    body: body.join('') || 'undefined',
     isDynamic: expressions.length > 0,
     rootNodeInfo,
     expressions,

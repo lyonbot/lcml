@@ -1,6 +1,6 @@
 import * as React from 'preact';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks'
-import { LCMLNodeInfo, parse } from 'lcml';
+import { LCMLNodeInfo, LCMLParseOptions, parse } from 'lcml';
 import { Line } from '@codemirror/text';
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { indentWithTab } from "@codemirror/commands"
@@ -35,14 +35,26 @@ const highlightSpanField = StateField.define<DecorationSet>({
 const encBase64 = (s: string) => btoa(Array.from(new TextEncoder().encode(s), x => String.fromCharCode(x)).join(''))
 const decBase64 = (s: string) => new TextDecoder().decode(Uint8Array.from(Array.from(atob(s), x => x.charCodeAt(0))))
 
+const examples: [string, string][] = [
+  ['Object', `/* comments are supported */\n\n{\n  foo: "hello {{ user.name }}",\n  bar: {{ some.obj }}\n}`],
+  ['Array', `[ 1, "string", {{ user }} ]`],
+  ['Whole Expression', `{{ ctx.getRequest() }}`],
+]
+
 let initialExpr: string
 try { initialExpr = decBase64(location.hash.slice(1)) } catch { } // eslint-disable-line no-empty
-initialExpr ||= `{\n  foo: "hello {{ world }}",\n  bar: {{ some.obj }}\n}`
+initialExpr ||= examples[0]![0]
+
+const fixedHeightEditor = EditorView.theme({
+  "&": { minHeight: "200px" },
+  ".cm-scroller": { overflow: "auto" }
+})
 
 const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [, forceUpdate] = useReducer((x, _: void) => x + 1, 0)
   const [expr, setExpr] = useState(initialExpr)
+  const [recoverFromError, setRecoverFromError] = useState<LCMLParseOptions['recoverFromError'] & string>('no')
   const [highlightNode, setHighlightNode] = useState<LCMLNodeInfo | null>(null)
   const unsetHighlightNode = useCallback(() => setHighlightNode(null), [])
 
@@ -51,27 +63,42 @@ const App = () => {
   const cm = cmRef.current
   useLayoutEffect(() => {
     const cm = new EditorView({
-      parent: cmContainer.current,
+      parent: cmContainer.current!,
       state: EditorState.create({
         extensions: [
           basicSetup,
+          fixedHeightEditor,
           keymap.of([
             indentWithTab,
             {
               key: 'Ctrl-/',
               mac: 'Meta-/',
               run(view) {
-                view.dispatch(view.state.changeByRange(range => {
-                  const line = view.state.doc.lineAt(range.head)
-                  const leading = /^(\s*)\/\//.exec(line.text)
+                const linesSet = new Set<Line>()
 
-                  return {
-                    range,
-                    changes: leading
-                      ? { from: line.from + leading[1].length, to: line.from + leading[0].length, insert: '' }
-                      : { from: line.from, insert: '//' }
-                  }
-                }))
+                view.state.selection.ranges.forEach(range => {
+                  let { from, to } = range;
+                  if (from > to) [to, from] = [from, to];
+
+                  let line: Line;
+                  do {
+                    line = view.state.doc.lineAt(from)
+                    from = line.to + 1
+                    linesSet.add(line)
+                  } while (from <= to)
+                })
+
+                const lines = Array.from(linesSet)
+                const strip = lines.every(x => x.text.startsWith('// '))
+
+                view.dispatch({
+                  changes: lines.map(
+                    strip
+                      ? line => ({ from: line.from, to: line.from + 3, insert: '' })
+                      : line => ({ from: line.from, insert: '// ' })
+                  )
+                })
+
                 return true
               }
             }
@@ -101,7 +128,7 @@ const App = () => {
       })
     }
 
-    history.replaceState({}, null, `#${encBase64(expr)}`)
+    history.replaceState({}, "", `#${encBase64(expr)}`)
   }, [cm, expr])
 
   useEffect(() => {
@@ -114,6 +141,8 @@ const App = () => {
   }, [cm, highlightNode])
 
   const focusHighlightNode = useCallback((node: LCMLNodeInfo) => {
+    if (!cm) return
+
     cm.dispatch({
       selection: EditorSelection.range(node.start, node.end),
       scrollIntoView: true,
@@ -121,28 +150,52 @@ const App = () => {
     cm.focus()
   }, [cm])
 
+  const exampleButtons = useMemo(() => <div className="exampleButtons">
+    Examples:
+    {examples.map(([n, e]) => <button onClick={() => setExpr(e)}>{n}</button>)}
+  </div>, [])
+
   const parseResult = useMemo(() => {
+    const since = performance.now()
     try {
-      const since = performance.now()
-      const result = parse(expr)
+      const result = parse(expr, { recoverFromError })
       const duration = performance.now() - since
 
       return { result, duration }
     } catch (error) {
-      return { error }
+      const duration = performance.now() - since
+      console.error(error)
+      return { error, duration }
     }
-  }, [expr])
+  }, [expr, recoverFromError])
 
   return <div className="app">
     <div className="editor">
       <h2>Input LCML Here:</h2>
+      {exampleButtons}
+      <p>
+        recoverFromError: <select
+          value={recoverFromError}
+          onChange={e => setRecoverFromError(e.currentTarget.value as any)}>
+          <option value="no">no</option>
+          <option value="recover">recover</option>
+          <option value="as-string">as-string</option>
+        </select>
+      </p>
       <div ref={cmContainer}></div>
 
       <h2>Result JavaScript:</h2>
-      <ResultJS value={parseResult.result?.body || ''} />
+      <ResultJS value={parseResult.result?.body ? `return ${parseResult.result.body}` : ''} />
     </div>
 
     <div className="output">
+      <div className="messageBar">
+        Parsed in {parseResult.duration} ms
+      </div>
+
+      {('error' in parseResult) && <div className="messageBar isError">
+        {(parseResult.error as Error).message}
+      </div>}
       <pre>{JSON.stringify(parseResult, null, 2)}</pre>
     </div>
 
@@ -159,4 +212,4 @@ const App = () => {
   </div>
 }
 
-React.render(<App />, document.querySelector('#app'))
+React.render(<App />, document.querySelector('#app')!)

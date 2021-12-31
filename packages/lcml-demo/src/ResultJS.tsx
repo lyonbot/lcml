@@ -6,6 +6,11 @@ import { keymap } from "@codemirror/view"
 import { javascript } from "@codemirror/lang-javascript"
 import "./index.css"
 
+const fixedHeightEditor = EditorView.theme({
+  "&": { minHeight: "200px" },
+  ".cm-scroller": { overflow: "auto" }
+})
+
 export function ResultJS(props: { value: string }) {
   const cmContainer = useRef<HTMLDivElement>(null)
   const cmRef = useRef<EditorView>(null)
@@ -13,10 +18,11 @@ export function ResultJS(props: { value: string }) {
 
   useLayoutEffect(() => {
     const cm = new EditorView({
-      parent: cmContainer.current,
+      parent: cmContainer.current!,
       state: EditorState.create({
         extensions: [
           basicSetup,
+          fixedHeightEditor,
           javascript(),
           keymap.of([indentWithTab]),
           EditorState.tabSize.of(2),

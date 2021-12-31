@@ -41,6 +41,15 @@ export interface LCMLParseOptions {
    * @defaultValue `"toString"`
    */
   globalToStringMethod?: string;
+
+  /**
+   * when a syntax error occurs, how to process remainder?
+   * 
+   * - `"no"` - just throw a LCMLParseError (default)
+   * - `"recover"` - discard remaining input and return partially-parsed result -- incomplete but valid result
+   * - `"as-string"` - discard all parsed result and treat whole input as string -- returns a (maybe dynamic) string
+   */
+  recoverFromError?: false | 'no' | 'recover' | 'as-string'
 }
 
 export type LCMLValueType = 'unknown' | 'array' | 'number' | 'string' | 'boolean' | 'object';

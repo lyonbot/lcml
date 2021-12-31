@@ -26,8 +26,10 @@ export class StringStream {
   }
 
   precede(length: number) {
-    this.str = this.str.slice(length);
-    this.pos += length;
+    const taken = this.str.slice(0, length);
+    this.str = this.str.slice(taken.length);
+    this.pos += taken.length;
+    return taken;
   }
 
   goto(chPos: number) {
