@@ -3,7 +3,7 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Low-Code Markup Language (DSL) for Values with Dynamic Expressions",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
