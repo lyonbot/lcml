@@ -13,6 +13,7 @@ import { ResultJS } from './ResultJS';
 import "github-markdown-css/github-markdown-light.css"
 import readme from 'lcml/README.md';
 import { marked } from 'marked';
+import debounce from 'lodash.debounce';
 
 const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' })
 
@@ -49,12 +50,7 @@ const examples: [string, string][] = [
 
 let initialExpr: string
 try { initialExpr = decBase64(location.hash.slice(1)) } catch { } // eslint-disable-line no-empty
-initialExpr ||= examples[0]![0]
-
-const fixedHeightEditor = EditorView.theme({
-  "&": { minHeight: "200px" },
-  ".cm-scroller": { overflow: "auto" }
-})
+initialExpr ||= examples[0][1]
 
 const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -67,13 +63,15 @@ const App = () => {
   const cmContainer = useRef<HTMLDivElement>(null)
   const cmRef = useRef<EditorView>(null)
   const cm = cmRef.current
+  const [cmHasFocus, setCmHasFocus] = useState(false)
   useLayoutEffect(() => {
+    const setExprDebounced = debounce(setExpr, 100)
+
     const cm = new EditorView({
       parent: cmContainer.current!,
       state: EditorState.create({
         extensions: [
           basicSetup,
-          fixedHeightEditor,
           keymap.of([
             indentWithTab,
             {
@@ -113,7 +111,11 @@ const App = () => {
           EditorState.tabSize.of(2),
           EditorView.updateListener.of(update => {
             if (!update.docChanged) return
-            setExpr(update.state.doc.toString())
+            setExprDebounced(update.state.doc.toString())
+          }),
+          EditorView.domEventHandlers({
+            focus: () => setCmHasFocus(true),
+            blur: () => setCmHasFocus(false),
           })
         ],
         doc: expr,
@@ -125,7 +127,7 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    if (!cm) return
+    if (!cm || cmHasFocus) return
 
     const currText = cm.state.doc.toString()
     if (currText !== expr) {
@@ -135,7 +137,7 @@ const App = () => {
     }
 
     history.replaceState({}, "", `#${encBase64(expr)}`)
-  }, [cm, expr])
+  }, [cm, cmHasFocus, expr])
 
   useEffect(() => {
     if (!cm) return

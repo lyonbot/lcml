@@ -19,6 +19,7 @@
     "@codemirror/view": "^0.19.37",
     "github-markdown-css": "^5.1.0",
     "lcml": "workspace:*",
+    "lodash.debounce": "^4.0.8",
     "marked": "^4.0.8",
     "preact": "^10.5.15"
   },

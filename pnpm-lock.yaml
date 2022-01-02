@@ -45,6 +45,7 @@ importers:
       '@types/marked': ^4.0.1
       github-markdown-css: ^5.1.0
       lcml: workspace:*
+      lodash.debounce: ^4.0.8
       marked: ^4.0.8
       preact: ^10.5.15
     dependencies:
@@ -57,6 +58,7 @@ importers:
       '@codemirror/view': mirrors.tencent.com/@codemirror/view/0.19.37
       github-markdown-css: mirrors.tencent.com/github-markdown-css/5.1.0
       lcml: link:../lcml
+      lodash.debounce: mirrors.tencent.com/lodash.debounce/4.0.8
       marked: mirrors.tencent.com/marked/4.0.8
       preact: mirrors.tencent.com/preact/10.5.15
     devDependencies:
@@ -5267,6 +5269,12 @@ packages:
     dependencies:
       p-locate: mirrors.tencent.com/p-locate/4.1.0
     dev: true
+
+  mirrors.tencent.com/lodash.debounce/4.0.8:
+    resolution: {integrity: sha1-gteb/zCmfEAF/9XiUVMArZyk168=, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/lodash.debounce/-/lodash.debounce-4.0.8.tgz}
+    name: lodash.debounce
+    version: 4.0.8
+    dev: false
 
   mirrors.tencent.com/lodash.get/4.4.2:
     resolution: {integrity: sha1-LRd/ZS+jHpObRDjVNBSZ36OCXpk=, registry: http://mirrors.cloud.tencent.com/npm/, tarball: https://mirrors.tencent.com/npm/lodash.get/-/lodash.get-4.4.2.tgz}

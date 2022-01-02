@@ -7,6 +7,8 @@ const escapeSequence = {
   v: '\v',
 };
 
+export const RE_IDENTIFIER = /^[_$a-zA-Z][_$a-zA-Z0-9]*$/;
+
 /**
  * convert escaped characters (eg. `\t`) into actual characters
  *
@@ -19,4 +21,8 @@ export function unescapeString(str: string) {
     if (ch in escapeSequence) return escapeSequence[ch as keyof typeof escapeSequence];
     return ch;
   });
+}
+
+export function isIdentifier(str: string) {
+  return RE_IDENTIFIER.test(str);
 }

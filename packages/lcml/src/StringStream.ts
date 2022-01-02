@@ -1,4 +1,4 @@
-import { unescapeString } from './escape';
+import { unescapeString } from './string';
 
 /**
  * @public
@@ -38,28 +38,27 @@ export class StringStream {
   }
 
   match(pattern: RegExp | string): RegExpMatchArray | null;
-  match<T>(pattern: RegExp | string, preprocess: (result: RegExpMatchArray) => T): T | null;
+  match<T>(pattern: RegExp | string, preprocess: (result: RegExpMatchArray) => T | void): T | null;
   match(pattern: RegExp | string, preprocess?: (result: RegExpMatchArray) => any) {
-    let ans: null | any[] = null;
+    let matched: null | any[] = null;
 
     if (typeof pattern === 'string') {
       if (this.str.slice(0, pattern.length) === pattern) {
-        ans = [pattern];
+        matched = [pattern];
       }
     } else {
       const mat = this.str.match(pattern);
       if (mat && mat.index === 0 && mat[0].length > 0) {
-        ans = mat;
+        matched = mat;
       }
     }
 
-    if (ans) {
-      this.precede(ans[0].length);
-      if (preprocess) return preprocess(ans);
-      return ans;
-    }
+    let ans: any = matched;
+    if (matched && preprocess) ans = preprocess(matched);
 
-    return null;
+    if (ans == null) return null;
+    this.precede(matched![0].length);
+    return ans;
   }
 
   /**

@@ -1,4 +1,4 @@
-import { unescapeString } from './escape';
+import { isIdentifier, unescapeString } from './string';
 import { LCMLParseOptions, LCMLParseResult, ExpressionSegmentInfo, LCMLNodeInfo, LCMLValueType } from './types';
 import { LCMLParseError } from './LCMLParseError';
 import { StringStream } from './StringStream';
@@ -35,8 +35,6 @@ interface ConsumingStringResult extends ConsumingResult {
   parts: { content: string; isJs?: boolean }[];
   isDynamic: boolean;
 }
-
-const RE_IDENTIFIER = /^[_$a-zA-Z][_$a-zA-Z0-9]*/;
 
 /**
  * @public
@@ -175,7 +173,7 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
       if (!nInfo) {
         // unexpected end of string
         precedeAndPushStaticString(str.length);
-        if (stop) throw new Error(`String ending quote is required. Expect ${stop}`);
+        if (stop) throw new Error(`Expect ${stop} as the end of string`);
         break;
       }
 
@@ -223,15 +221,13 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
   /**
    * consume number or boolean or null
    */
-  const consumeLiteral = (): ConsumingResult | void => {
-    let m = stream.match(/^(null|undefined)\b/);
-    if (m) return { js: m[0]!, type: 'unknown' };
-
-    m = stream.match(/^(true|false)\b/);
-    if (m) return { js: m[0]!, type: 'boolean' };
-
-    m = stream.match(/^-?(?:0x[0-9a-f]+|0o[0-7]+|\d+(\.\d*)?(e-?\d+)?)/) || stream.match(/^-?\.\d+(e-?\d+)/);
-    if (m) return { js: m[0]!, type: 'number' };
+  const consumeLiteral = (): ConsumingResult | null => {
+    return stream.match(/^[^\s,/{}[\]()]+/, ([js]): ConsumingResult | void => {
+      if (js === 'null' || js === 'undefined') return { js, type: 'unknown' };
+      if (js === 'true' || js === 'false') return { js, type: 'unknown' };
+      if (/^-?0(o[0-7]+|b[01]+|x[\da-fA-F])$/.test(js)) return { js, type: 'number' };
+      if (/^-?(\d+\.?|\.\d)\d*(e-?\d+)?$/.test(js)) return { js, type: 'number' };
+    });
   };
 
   /**
@@ -362,27 +358,37 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
           }
 
           let key = '';
+          let keyIsQuoted = false;
           let keyExpression: ExpressionSegmentInfo | undefined;
-
-          const tmp = stream.match(RE_IDENTIFIER);
-          if (tmp) key = tmp[0];
-
-          if (!key) {
-            const s = consumeString();
-            if (s) key = s.isDynamic ? `[${s.js}]` : s.parts[0].content;
-          }
 
           if (!key) {
             const s = consumeExpression();
             if (s) {
               key = `[${s.js}]`;
+              keyIsQuoted = true;
               keyExpression = s.expression;
             }
           }
 
+          if (!key) {
+            const s = consumeString();
+            if (s) {
+              if (s.isDynamic) {
+                key = `[${s.js}]`;
+                keyIsQuoted = true;
+              } else {
+                key = s.parts[0].content;
+              }
+            }
+          }
+
+          if (!key) {
+            key = stream.match(/^[^:,]+/)?.[0] || '';
+          }
+
           if (key) {
             pushNode(key, { start, propertyKeyEnd: stream.pos, propertyKeyExpression: keyExpression });
-            body.push(state.newLine + key);
+            body.push(state.newLine + (keyIsQuoted || isIdentifier(key) ? key : JSON.stringify(key)));
             state.type = StateType.IN_OBJECT_COLON;
             state.size!++;
             continue;
@@ -413,7 +419,7 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
             continue;
           }
 
-          throw new Error('Expect a comma, right square bracket or item');
+          throw new Error(`Expect a property value`);
         }
 
         case StateType.IN_OBJECT_COMMA: {
@@ -463,7 +469,7 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
               continue;
             }
 
-            throw new Error('Expect a comma, right square bracket or item');
+            throw new Error(`Expect a comma${state.arrItemLoaded ? '' : ', item value'} or right square bracket`);
           }
 
           throw new Error('Unhandled internal status');

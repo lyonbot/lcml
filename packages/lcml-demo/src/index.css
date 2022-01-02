@@ -28,11 +28,13 @@ body {
 
 .editor {
   grid-area: editor;
+  min-width: 300px;
 }
 
 .output {
   grid-area: output;
   overflow: auto;
+  min-width: 300px;
 }
 
 .exampleButtons {
@@ -55,6 +57,12 @@ body {
 
 .cm-editor {
   outline: 1px solid #999;
+  height: 150px;
+  max-height: 250px;
+}
+
+.cm-scroller {
+  overflow: auto;
 }
 
 .cm-highlightPart {
