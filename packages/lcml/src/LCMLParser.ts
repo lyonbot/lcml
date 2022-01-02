@@ -92,13 +92,10 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
   //#endregion
 
   // -------------------------
-  //#region Consuming the stream (but not immediately change result's body)
+  //#region Consuming the stream without updating `body`
 
   const consumeCommentAndSpaces = (): void => {
-    stream.skipSpace();
-    while (stream.match(/^\/\*.*?(\*\/|$)/) || stream.match(/^\/\/.*([\r\n]+|$)/)) {
-      stream.skipSpace();
-    }
+    while (stream.match(/^(?:\/\*.*?(\*\/|$)|\/\/.*([\r\n]+|$)|\s+)+/));
   };
 
   /**
@@ -225,8 +222,9 @@ export function parse(lcml: string, opts: LCMLParseOptions = {}): LCMLParseResul
     return stream.match(/^[^\s,/{}[\]()]+/, ([js]): ConsumingResult | void => {
       if (js === 'null' || js === 'undefined') return { js, type: 'unknown' };
       if (js === 'true' || js === 'false') return { js, type: 'unknown' };
-      if (/^-?0(o[0-7]+|b[01]+|x[\da-fA-F])$/.test(js)) return { js, type: 'number' };
-      if (/^-?(\d+\.?|\.\d)\d*(e-?\d+)?$/.test(js)) return { js, type: 'number' };
+      if (/^[+-]?(?:0(?:o[0-7]+|b[01]+|x[\da-fA-F])|(?:\d+\.?|\.\d)\d*(?:e-?\d+)?|Infinity|NaN)$/.test(js)) {
+        return { js, type: 'number' };
+      }
     });
   };
 
