@@ -13,6 +13,11 @@ import { internalParseStringContent } from './parseImpl/parseString';
  */
 export interface ParseOptions {
   /**
+   * treat invalid inputs as string. see README
+   */
+  loose?: boolean;
+
+  /**
    * when input is empty, what shall be returned?
    *
    * @default "as-undefined"
@@ -21,10 +26,8 @@ export interface ParseOptions {
 
   /**
    * after parsing something, if there is still characters left unparsed, shall we just ignore them, or treat as error
-   *
-   * @default "error"
    */
-  treatUnparsedRemainder?: 'as-error' | 'ignore';
+  ignoreUnparsedRemainder?: boolean;
 
   /**
    * when error occurs
@@ -72,51 +75,67 @@ export function parse(str: string, opts: ParseOptions = {}) {
     const actualStart = stream.pos;
 
     let error: ParseError | null = null;
+    let isInputEmpty = false;
 
     if (stream.eof()) {
-      // see opts.emptyInput
+      // after removing comments
+      // nothing left
+      // we shall make a fake LCML input
+
       const placeholder = opts.treatEmptyInput === 'as-empty-string' ? '""' : 'undefined';
       stream = new StringStream(new Array(actualStart).fill(' ').join('') + placeholder);
       stream.precede(actualStart);
+      isInputEmpty = true; //later fix the location info
     }
 
     const top = stream.peek();
     let ast = parseValue(stream, top);
 
-    if (!ast) {
-      stream.precede(actualStart);
-      ast = internalParseStringContent(stream, '')!; // empty input is processed above
+    if (ast) {
+      // successfully parsed something
+
+      if (isInputEmpty) {
+        // input LCML is fake!
+        ast.parsedLength = 0;
+        ast.end = ast.start;
+      }
+
+      stream.precede(ast.parsedLength);
+      stream.skipSpaces();
+      error = isRecovering();
+    } else {
+      // nothing parsed, we shall throw a error
+      error = new ParseError('invalid input', stream);
     }
 
-    // successfully parsed something
-    stream.precede(ast.parsedLength);
-    stream.skipSpaces();
-
-    error = isRecovering();
+    // see README the "Loose Mode" part's Note
+    const firstType = ast && ast.type;
+    const mayLoose = !!opts.loose && firstType !== 'string' && firstType !== 'array' && firstType !== 'object';
 
     // do extra check here: is EOF reached?
-    if (!error && !stream.eof()) {
-      if (ast.type === 'expression') {
-        // special case. see README.md
-        const stream = new StringStream(str);
-        stream.precede(actualStart);
-        ast = internalParseStringContent(stream, '');
-      } else if (opts.treatUnparsedRemainder !== 'ignore') {
-        // by default, treat unparsed part as error
-        error = new ParseError('unexpected remainder', stream);
-      }
+    // by default, treat unparsed part as error
+    // but they can also be ignored
+    if (!error && !stream.eof() && (mayLoose || !opts.ignoreUnparsedRemainder)) {
+      // special note: when loose mode works,
+      // always make a error to trigger following as-string logic
+      error = new ParseError('unexpected remainder', stream);
     }
 
-    if (error && (opts.onError || 'throw') === 'throw') {
-      throw error;
-    }
-
-    if (error && opts.onError === 'as-string') {
+    // now convert
+    const asString = !!error && (mayLoose || opts.onError === 'as-string');
+    if (asString) {
       // discard all parsed structures
       // treat whole input as string
       const stream = new StringStream(str);
       stream.precede(actualStart);
       ast = internalParseStringContent(stream, '');
+
+      if (mayLoose) error = null;
+    }
+
+    // finally throw error if needed
+    if ((opts.onError || 'throw') === 'throw') {
+      throw error;
     }
 
     return {
@@ -125,6 +144,7 @@ export function parse(str: string, opts: ParseOptions = {}) {
       actualStart,
       end: actualStart + (ast ? ast.parsedLength : 0),
       error,
+      looseModeEnabled: asString && mayLoose,
     };
   } finally {
     endParsing();

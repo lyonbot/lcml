@@ -11,7 +11,12 @@ interface Props {
 }
 
 function useFormItems<T extends Record<string, any>>(
-  rulesFactory: () => { [k in keyof T]?: (value: T[k], whole: T) => React.VNode },
+  rulesFactory: () => {
+    [k in keyof T]?: {
+      title?: React.ComponentChildren;
+      input: (value: T[k], whole: T) => React.VNode;
+    };
+  },
   setter: StateUpdater<T>,
 ) {
   const rules = useMemo(rulesFactory, []);
@@ -33,11 +38,12 @@ function useFormItems<T extends Record<string, any>>(
     () =>
       function render(form: T) {
         return metas.map(({ key, props }) => {
+          const rule = rules[key]!;
           return (
             <div>
               <label>
-                {`${key}: `}
-                {React.cloneElement(rules[key]!(form[key], form), props)}
+                {rule.title || `${key}: `}
+                {React.cloneElement(rule.input(form[key], form), props)}
               </label>
             </div>
           );
@@ -52,32 +58,30 @@ function useFormItems<T extends Record<string, any>>(
 export function OptionsPanel(props: Props) {
   const parseOptions = useFormItems<ParseOptions>(
     () => ({
-      treatUnparsedRemainder: value => (
-        <select value={value}>
-          <option value="ignore">ignore</option>
-          <option value="as-error">as-error</option>
-        </select>
-      ),
-      onError: value => (
-        <select value={value}>
-          <option value="throw">throw</option>
-          <option value="recover">recover</option>
-          <option value="as-string">as-string</option>
-        </select>
-      ),
+      loose: { input: value => <input type="checkbox" checked={value} /> },
+      ignoreUnparsedRemainder: { input: value => <input type="checkbox" checked={value} /> },
+      onError: {
+        input: value => (
+          <select value={value}>
+            <option value="throw">throw</option>
+            <option value="recover">recover</option>
+            <option value="as-string">as-string</option>
+          </select>
+        ),
+      },
     }),
     props.setParseOptions,
   );
   const toJSOptions = useFormItems<ToJSOptions>(
     () => ({
-      globalToStringMethod: value => <input type="text" value={value} />,
-      compact: value => <input type="checkbox" checked={value} />,
+      globalToStringMethod: { input: value => <input type="text" value={value} /> },
+      compact: { input: value => <input type="checkbox" checked={value} /> },
     }),
     props.setToJSOptions,
   );
 
   return (
-    <div className='editor-options'>
+    <div className="editor-options">
       <div className="named-box" name="parseOptions">
         {parseOptions(props.parseOptions)}
       </div>

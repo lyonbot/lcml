@@ -55,7 +55,8 @@ const examples: [string, string][] = [
 let initialExpr = examples[0][1];
 let defaultParseOptions: ParseOptions = {
   onError: 'recover',
-  treatUnparsedRemainder: 'as-error',
+  loose: false,
+  ignoreUnparsedRemainder: false,
 };
 let defaultToJSOptions: ToJSOptions = {
   compact: false,

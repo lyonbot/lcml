@@ -66,43 +66,62 @@ And every part's type information is inferred:
 
 LCML syntax is based on JSON syntax, with `{{ expression }}` and comments supported.
 
-You can use `{{ expression }}` as:
+You can use `{{ expression }}`:
 
-- array item
-- property value
-- property key
-- the whole LCML
+- in string
+- as array item
+- as property value
+- as property key
+- as the whole LCML
 
-You can also use `{{ expression }}` in string literal
+### Loose Mode
 
-Special case:
+When `{ loose: true }` is passed to parse, these invalid LCML will become valid strings:
 
-- If your whole LCML looks like this:
+| LCML | Default Mode | Loose Mode (`loose: true`) |
+|------|--------------|------------|
+| `{{ user.name }}, Welcome` | Error: unexpected remainder | treated as string `"{{ user.name }}, Welcome"` |
+| `Hello, {{ user.name }}` | Error: invalid input (at "H") | treated as string `"Hello, {{ user.name }}"` |
+| `/* corrupted */ {{ user` | Error: expect end of expression | treated as string `"{{ user"` |
 
-  ```
-  /* a hello message */
-  {{ foo.bar }}, welcome!
-  ```
+Loose Mode Rules:
 
-  it will be treated as string `"{{ foo.bar }}, welcome!"` and the leading comments will be ignored
+1. leading comments are ignored.
+
+2. if the beginning of LCML input looks like a **string, array or object**, 
+ the loose mode will NOT work!
+
+3. `{ ignoreUnparsedRemainder: true }` will not work, unless loose mode is suppressed (see rule #2)
+
+4. due to rule #2, corrupted input like *`{ hello: `* will cause a Error. To treat it as string, set `{ onError: 'as-string' }` -- this can be dangerous!
+
+5. if loose mode works successfully, parser will return `{ looseModeEnabled: true }`
+
+6. (not related to loose mode, FYI) to tell if `{ onError: 'as-string' }` has functioned, you shall check `!!parseResult.error && parseResult.ast.type === 'string' && !parseResult.ast.quote`
 
 ## Integrating LCML
 
-```js
-import { parse } from 'lcml';
+```ts
+import { compile, CompileOptions } from 'lcml';
 
+const options: CompileOptions = {
+
+  // loose: false,
+  // onError: 'throw' | 'recover' | 'as-string',
+  // ignoreUnparsedRemainder: false,
+  // treatEmptyInput: 'as-undefined',
+  
   // compact: false,
   // processExpression: (node, parents) => { return node.expression },
   // globalToStringMethod: "toString",
-  // onError: 'no' | 'recover' | 'as-string',
-  // treatEmptyInput: 'as-undefined',
+  
 };
-const result = parse('Hello, {{ user.name }}', options);
+const result = compile('Hello, {{ user.name }}', options);
 
 console.log(result.body);
 // => 'Hello, ' + toString(user.name)
 
-console.log(result.rootNodeInfo);
+console.log(result.ast);
 // => { start: 0, end: 22, type: "string" }
 
 console.log(result.expressions);
