@@ -5,10 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "lint": "eslint --ext ts .",
-    "dev": "pnpm run --parallel -r dev",
-    "clean": "pnpm run --parallel -r clean",
-    "build": "pnpm run -r build"
+    "lint": "eslint --ext ts,tsx .",
+    "dev": "pnpm run -r --filter ./packages/ --parallel dev",
+    "clean": "pnpm run -r --filter ./packages/ --parallel clean",
+    "build": "pnpm run -r --filter ./packages/ build"
   },
   "repository": {
     "type": "git",
