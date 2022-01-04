@@ -1,4 +1,5 @@
-export { parse } from './LCMLParser';
 export { StringStream } from './StringStream';
-export { LCMLParseError } from './LCMLParseError';
-export * from './types';
+export * from './parseImpl/exports';
+export * from './parse';
+export * from './toJS';
+export * from './compile';

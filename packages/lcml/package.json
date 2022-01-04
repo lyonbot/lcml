@@ -7,20 +7,19 @@
   "description": "Low-Code Markup Language (DSL) for Values with Dynamic Expressions",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
-  "module": "./lib/index.js",
+  "module": "./dist/index.esm.js",
   "scripts": {
     "test": "jest",
     "prepare": "npm run clean && npm run build",
     "clean": "rimraf dist temp etc lib *.tsbuildinfo && mkdir etc",
-    "dev": "rimraf dist && mkdir dist && ( echo \"export * from '../lib'\" | tee dist/index.js dist/index.d.ts ) && tsc -b -w",
-    "build": "tsc -b && api-extractor run --local && esbuild --bundle lib/index.js --outdir=dist --minify --sourcemap --format=cjs"
+    "dev": "rimraf dist && mkdir dist && ( echo \"export * from '../lib'\" | tee dist/index.js dist/index.esm.js dist/index.d.ts ) && tsc -b -w",
+    "build": "tsc -b && api-extractor run --local && npm run build:bundle",
+    "build:bundle": "npm run x:esbuild -- --outfile=dist/index.esm.js --format=esm && npm run x:esbuild -- --outfile=dist/index.js --format=cjs",
+    "x:esbuild": "esbuild --bundle lib/index.js --minify --sourcemap"
   },
   "files": [
     "dist",
-    "lib",
-    "!**/*.map",
-    "!**/*.test.js",
-    "!**/*.test.d.ts"
+    "!**/*.map"
   ],
   "repository": {
     "type": "git",

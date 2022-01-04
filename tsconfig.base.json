@@ -10,7 +10,6 @@
     "moduleResolution": "node",
     "strict": true,
     "composite": true,
-    "noUnusedLocals": true,
     "experimentalDecorators": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,

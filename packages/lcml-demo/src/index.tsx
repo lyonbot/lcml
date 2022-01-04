@@ -1,6 +1,6 @@
 import * as React from 'preact';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks'
-import { LCMLNodeInfo, LCMLParseOptions, parse } from 'lcml';
+import { toJS, parse, ParseOptions, ParseError, ParsedNodeBase } from 'lcml';
 import { Line } from '@codemirror/text';
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { indentWithTab } from "@codemirror/commands"
@@ -56,8 +56,8 @@ const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [, forceUpdate] = useReducer((x, _: void) => x + 1, 0)
   const [expr, setExpr] = useState(initialExpr)
-  const [recoverFromError, setRecoverFromError] = useState<LCMLParseOptions['recoverFromError'] & string>('no')
-  const [highlightNode, setHighlightNode] = useState<LCMLNodeInfo | null>(null)
+  const [onError, setOnError] = useState<ParseOptions['onError'] & string>('recover')
+  const [highlightNode, setHighlightNode] = useState<ParsedNodeBase | null>(null)
   const unsetHighlightNode = useCallback(() => setHighlightNode(null), [])
 
   const cmContainer = useRef<HTMLDivElement>(null)
@@ -148,7 +148,7 @@ const App = () => {
     cm.dispatch({ effects })
   }, [cm, highlightNode])
 
-  const focusHighlightNode = useCallback((node: LCMLNodeInfo) => {
+  const focusHighlightNode = useCallback((node: ParsedNodeBase) => {
     if (!cm) return
 
     cm.dispatch({
@@ -163,19 +163,32 @@ const App = () => {
     {examples.map(([n, e]) => <button onClick={() => setExpr(e)}>{n}</button>)}
   </div>, [])
 
-  const parseResult = useMemo(() => {
-    const since = performance.now()
+  const result = useMemo(() => {
+    let since = performance.now()
     try {
-      const result = parse(expr, { recoverFromError })
-      const duration = performance.now() - since
+      const parseOutput = parse(expr, { onError })
+      const parseDuration = performance.now() - since
 
-      return { result, duration }
+      since = performance.now()
+      const body = parseOutput.ast ? toJS(parseOutput.ast) : 'undefined'
+      const toJSDuration = performance.now() - since
+
+      return {
+        parseOutput,
+        parseDuration,
+        body,
+        toJSDuration,
+        duration: parseDuration + toJSDuration,
+        error: parseOutput.error,
+      }
     } catch (error) {
       const duration = performance.now() - since
       console.error(error)
       return { error, duration }
     }
-  }, [expr, recoverFromError])
+  }, [expr, onError])
+
+  const rootNode = result.parseOutput?.ast
 
   return <div className="app">
     <div className="editor">
@@ -183,8 +196,8 @@ const App = () => {
       {exampleButtons}
       <p>
         recoverFromError: <select
-          value={recoverFromError}
-          onChange={e => setRecoverFromError(e.currentTarget.value as any)}>
+          value={onError}
+          onChange={e => setOnError(e.currentTarget.value as any)}>
           <option value="no">no</option>
           <option value="recover">recover</option>
           <option value="as-string">as-string</option>
@@ -193,28 +206,38 @@ const App = () => {
       <div ref={cmContainer}></div>
 
       <h2>Result JavaScript:</h2>
-      <ResultJS value={parseResult.result?.body ? `return ${parseResult.result.body}` : ''} />
+      <ResultJS value={result.body ? `return ${result.body}` : ''} />
     </div>
 
     <div className="output">
       <div className="messageBar">
-        Parsed in {parseResult.duration} ms
+        Finished in {result.duration.toFixed(2)} ms
+        {'parseDuration' in result && `, parse ${result.parseDuration!.toFixed(2)} ms`}
+        {'toJSDuration' in result && `, toJS ${result.toJSDuration!.toFixed(2)} ms`}
       </div>
 
-      {('error' in parseResult) && <div className="messageBar isError">
-        {(parseResult.error as Error).message}
+      {!!result.error && <div className="messageBar isError">
+        {(result.error as Error).message}
+        {result.error instanceof ParseError && (<button type="button" onClick={() => {
+          cm!.focus()
+
+          const pos = EditorSelection.cursor((result.error as ParseError).position)
+          cm!.dispatch({ selection: pos })
+        }}>Goto Position</button>)}
       </div>}
-      <pre>{JSON.stringify(parseResult, null, 2)}</pre>
+      <pre>{JSON.stringify(result, null, 2)}</pre>
     </div>
 
     <div className="nodeTreeView">
       <ActiveNode.Provider value={highlightNode}>
-        {parseResult.result?.rootNodeInfo && <NodePresent
-          node={parseResult.result.rootNodeInfo}
-          onMouseMove={setHighlightNode}
-          onClick={focusHighlightNode}
-          onMouseLeave={unsetHighlightNode}
-        />}
+        {rootNode
+          ? <NodePresent
+            node={rootNode}
+            onMouseMove={setHighlightNode}
+            onClick={focusHighlightNode}
+            onMouseLeave={unsetHighlightNode}
+          />
+          : <div />}
       </ActiveNode.Provider>
     </div>
 

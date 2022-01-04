@@ -17,6 +17,7 @@ body {
 .nodeTreeView {
   grid-area: tree;
   overflow: auto;
+  position: relative;
 }
 
 .sidebar {

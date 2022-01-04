@@ -5,7 +5,7 @@
 
 Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a superset of human readable JSON.
 
-[ [Playground Demo](https://lyonbot.github.io/lcml/) | [GitHub](https://github.com/lyonbot/lcml) ]
+[ [👯 Try it Now](https://lyonbot.github.io/lcml/) | [💻 GitHub](https://github.com/lyonbot/lcml) | [📓 LCML Syntax](https://github.com/lyonbot/lcml/tree/main/packages/lcml#lcml-syntax) | [📓 Integrating LCML](https://github.com/lyonbot/lcml/tree/main/packages/lcml#integrating-lcml) ]
 
 | Written in LCML           | Output JavaScript               | Inferred Type Information |
 | ------------------------- | ------------------------------- | ------------------------- |
@@ -62,15 +62,40 @@ And every part's type information is inferred:
 - Can transform / transpile the expressions before generating the JavaScript code.
 - Type information is inferred and recorded.
 
-## Integrating
+## LCML Syntax
+
+LCML syntax is based on JSON syntax, with `{{ expression }}` and comments supported.
+
+You can use `{{ expression }}` as:
+
+- array item
+- property value
+- property key
+- the whole LCML
+
+You can also use `{{ expression }}` in string literal
+
+Special case:
+
+- If your whole LCML looks like this:
+
+  ```
+  /* a hello message */
+  {{ foo.bar }}, welcome!
+  ```
+
+  it will be treated as string `"{{ foo.bar }}, welcome!"` and the leading comments will be ignored
+
+## Integrating LCML
 
 ```js
 import { parse } from 'lcml';
 
-const options = {
-  // handleExpression: (item) => {},
+  // compact: false,
+  // processExpression: (node, parents) => { return node.expression },
   // globalToStringMethod: "toString",
-  // recoverFromError: 'no' | 'recover' | 'as-string',
+  // onError: 'no' | 'recover' | 'as-string',
+  // treatEmptyInput: 'as-undefined',
 };
 const result = parse('Hello, {{ user.name }}', options);
 
@@ -85,9 +110,7 @@ console.log(result.expressions);
 //      {
 //         start: 7,
 //         end: 22,
-//         type: "unknown",
 //         expression: " user.name ",
-//         rawExpression: " user.name "
 //      }
 //    ]
 ```
@@ -118,10 +141,18 @@ You can set option `globalToStringMethod` in order to use other name instead of 
 
 ### Process Embedded Expressions
 
-As presented above, option `handleExpression` can be a callback function receiving an `item`.
+As presented above, option `processExpression` can be a callback function receiving `node` and its `parents`,
+returns a JavaScript expression.
 
-You can set `item.type` to other typename like `"object"`, `"string"`. This will affect the inferred type information.
+You can read `node.expression`, transpile it and return new expression.
+For example, use Babel to transpile the original Expression in order to support fashion ESNext syntax.
 
-You can modify `item.expression` and the generated JavaScript code will be affected. For example, use Babel to transpile the original Expression in order to support fashion ESNext syntax.
+The generated JavaScript code will be affected. 
 
-Beware: in the received `item.expression`, leading and trailing spaces are NOT trimmed.
+Beware: in the received `node.expression`, leading and trailing spaces are NOT trimmed.
+
+```js
+processExpression: (node, parents) => {
+    return node.expression;
+}
+```

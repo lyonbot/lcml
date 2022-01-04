@@ -1,0 +1,74 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`toJS should work: {
+  processExpression: <ref *1> [Function: mockConstructor] {
+    [length]: 1,
+    [name]: 'mockConstructor',
+    [prototype]: { [constructor]: [Circular *1] },
+    _isMockFunction: true,
+    getMockImplementation: [Function (anonymous)] { [length]: 0, [name]: '' },
+    mock: [Getter/Setter],
+    mockClear: [Function (anonymous)] { [length]: 0, [name]: '' },
+    mockReset: [Function (anonymous)] { [length]: 0, [name]: '' },
+    mockRestore: [Function (anonymous)] { [length]: 0, [name]: '' },
+    mockReturnValueOnce: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockResolvedValueOnce: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockRejectedValueOnce: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockReturnValue: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockResolvedValue: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockRejectedValue: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockImplementationOnce: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockImplementation: [Function (anonymous)] { [length]: 1, [name]: '' },
+    mockReturnThis: [Function (anonymous)] { [length]: 0, [name]: '' },
+    mockName: [Function (anonymous)] { [length]: 1, [name]: '' },
+    getMockName: [Function (anonymous)] { [length]: 0, [name]: '' }
+  }
+} 1`] = `
+"{
+  [\\"foo \\" + toString(( expr ))]: 1,
+  \\"bar\\": [  
+  ( test ),  
+  false,  
+  /* empty */,  
+],
+  [( sym )]: [  
+  2,  
+  3,  
+  4,  
+],
+}"
+`;
+
+exports[`toJS should work: { compact: true } 1`] = `"{ [\\"foo \\" + toString(( expr ))]: 1, \\"bar\\": [ ( test ), false, /* empty */, ], [( sym )]: [ 2, 3, 4, ], }"`;
+
+exports[`toJS should work: { globalToStringMethod: 'myToString' } 1`] = `
+"{
+  [\\"foo \\" + myToString(( expr ))]: 1,
+  \\"bar\\": [  
+  ( test ),  
+  false,  
+  /* empty */,  
+],
+  [( sym )]: [  
+  2,  
+  3,  
+  4,  
+],
+}"
+`;
+
+exports[`toJS should work: {} 1`] = `
+"{
+  [\\"foo \\" + toString( expr )]: 1,
+  \\"bar\\": [  
+  ( test ),  
+  false,  
+  /* empty */,  
+],
+  [( sym )]: [  
+  2,  
+  3,  
+  4,  
+],
+}"
+`;

@@ -3,12 +3,21 @@
   border-radius: 4px;
   margin-bottom: 4px;
   padding: 4px;
-  position: relative;
   padding-left: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  gap: 4px;
+  min-width: 200px;
+  width: fit-content;
 }
 
 .np-node.isHovering {
   border-color: #999;
+}
+
+.np-node.isFake {
+  opacity: 0.6;
 }
 
 .np-title {
@@ -26,6 +35,16 @@
   vertical-align: middle;
 }
 
-.np-children {
-  margin-top: 4px;
+.np-property-key {
+  background-color: #eee;
+}
+
+.np-loc-range {
+  font-size: 12px;
+  zoom: 0.8;
+  opacity: 0.5;
+  color: #36f;
+  margin-left: 12px;
+  border: 1px solid;
+  padding: 1px 4px;
 }
