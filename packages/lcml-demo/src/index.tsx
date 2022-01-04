@@ -1,71 +1,90 @@
 import * as React from 'preact';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks'
-import { toJS, parse, ParseOptions, ParseError, ParsedNodeBase } from 'lcml';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'preact/hooks';
+import { toJS, parse, ParseOptions, ParseError, ParsedNodeBase, ToJSOptions } from 'lcml';
 import { Line } from '@codemirror/text';
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
-import { indentWithTab } from "@codemirror/commands"
-import { Decoration, DecorationSet, keymap } from "@codemirror/view"
-import { StateField, StateEffect, EditorSelection } from "@codemirror/state"
+import { indentWithTab } from '@codemirror/commands';
+import { Decoration, DecorationSet, keymap } from '@codemirror/view';
+import { StateField, StateEffect, EditorSelection } from '@codemirror/state';
 import { ActiveNode, NodePresent } from './NodePresent';
-import "./index.css"
+import './index.css';
 import { ResultJS } from './ResultJS';
 
-import "github-markdown-css/github-markdown-light.css"
+import 'github-markdown-css/github-markdown-light.css';
 import readme from 'lcml/README.md';
 import { marked } from 'marked';
 import debounce from 'lodash.debounce';
+import { OptionsPanel } from './OptionsPanel';
 
-const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' })
+const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' });
 
-const readmeNode = <article class="markdown-body" dangerouslySetInnerHTML={{ __html: marked(readme) }}></article>
+const readmeNode = <article class="markdown-body" dangerouslySetInnerHTML={{ __html: marked(readme) }}></article>;
 
-const setHighlightSpan = StateEffect.define<{ from: number, to: number } | { remove: true }>()
+const setHighlightSpan = StateEffect.define<{ from: number; to: number } | { remove: true }>();
 const highlightSpanField = StateField.define<DecorationSet>({
   create() {
-    return Decoration.none
+    return Decoration.none;
   },
   update(decorations, tr) {
-    decorations = decorations.map(tr.changes)
+    decorations = decorations.map(tr.changes);
     for (const e of tr.effects) {
       if (e.is(setHighlightSpan)) {
-        decorations = decorations.update({ filter: () => false })
+        decorations = decorations.update({ filter: () => false });
         if (!('remove' in e.value)) {
-          decorations = decorations.update({ add: [highlightSpan.range(e.value.from, e.value.to)] })
+          decorations = decorations.update({ add: [highlightSpan.range(e.value.from, e.value.to)] });
         }
       }
     }
-    return decorations
+    return decorations;
   },
-  provide: f => EditorView.decorations.from(f)
-})
+  provide: f => EditorView.decorations.from(f),
+});
 
-const encBase64 = (s: string) => btoa(Array.from(new TextEncoder().encode(s), x => String.fromCharCode(x)).join(''))
-const decBase64 = (s: string) => new TextDecoder().decode(Uint8Array.from(Array.from(atob(s), x => x.charCodeAt(0))))
+const encBase64 = (s: any) =>
+  btoa(Array.from(new TextEncoder().encode(JSON.stringify(s)), x => String.fromCharCode(x)).join(''));
+
+const decBase64 = (s: string) =>
+  JSON.parse(new TextDecoder().decode(Uint8Array.from(Array.from(atob(s), x => x.charCodeAt(0)))));
 
 const examples: [string, string][] = [
   ['Object', `/* comments are supported */\n\n{\n  foo: "hello {{ user.name }}",\n  bar: {{ some.obj }}\n}`],
   ['Array', `[ 1, "string", {{ user }} ]`],
   ['Whole Expression', `{{ ctx.getRequest() }}`],
-]
+];
 
-let initialExpr: string
-try { initialExpr = decBase64(location.hash.slice(1)) } catch { } // eslint-disable-line no-empty
-initialExpr ||= examples[0][1]
+let initialExpr = examples[0][1];
+let defaultParseOptions: ParseOptions = {
+  onError: 'recover',
+  treatUnparsedRemainder: 'as-error',
+};
+let defaultToJSOptions: ToJSOptions = {
+  compact: false,
+  globalToStringMethod: 'toString',
+};
+
+try {
+  const dec = decBase64(location.hash.slice(1));
+  initialExpr = dec.expression;
+  defaultParseOptions = { ...defaultParseOptions, ...dec.parseOptions };
+  defaultToJSOptions = { ...defaultToJSOptions, ...dec.toJSOptions };
+} catch {} // eslint-disable-line no-empty
 
 const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [, forceUpdate] = useReducer((x, _: void) => x + 1, 0)
-  const [expr, setExpr] = useState(initialExpr)
-  const [onError, setOnError] = useState<ParseOptions['onError'] & string>('recover')
-  const [highlightNode, setHighlightNode] = useState<ParsedNodeBase | null>(null)
-  const unsetHighlightNode = useCallback(() => setHighlightNode(null), [])
+  const [, forceUpdate] = useReducer((x, _: void) => x + 1, 0);
+  const [expr, setExpr] = useState(initialExpr);
+  const [parseOptions, setParseOptions] = useState(defaultParseOptions);
+  const [toJSOptions, setToJSOptions] = useState(defaultToJSOptions);
 
-  const cmContainer = useRef<HTMLDivElement>(null)
-  const cmRef = useRef<EditorView>(null)
-  const cm = cmRef.current
-  const [cmHasFocus, setCmHasFocus] = useState(false)
+  const [highlightNode, setHighlightNode] = useState<ParsedNodeBase | null>(null);
+  const unsetHighlightNode = useCallback(() => setHighlightNode(null), []);
+
+  const cmContainer = useRef<HTMLDivElement>(null);
+  const cmRef = useRef<EditorView>(null);
+  const cm = cmRef.current;
+  const [cmHasFocus, setCmHasFocus] = useState(false);
   useLayoutEffect(() => {
-    const setExprDebounced = debounce(setExpr, 100)
+    const setExprDebounced = debounce(setExpr, 100);
 
     const cm = new EditorView({
       parent: cmContainer.current!,
@@ -78,7 +97,7 @@ const App = () => {
               key: 'Ctrl-/',
               mac: 'Meta-/',
               run(view) {
-                const linesSet = new Set<Line>()
+                const linesSet = new Set<Line>();
 
                 view.state.selection.ranges.forEach(range => {
                   let { from, to } = range;
@@ -86,92 +105,100 @@ const App = () => {
 
                   let line: Line;
                   do {
-                    line = view.state.doc.lineAt(from)
-                    from = line.to + 1
-                    linesSet.add(line)
-                  } while (from <= to)
-                })
+                    line = view.state.doc.lineAt(from);
+                    from = line.to + 1;
+                    linesSet.add(line);
+                  } while (from <= to);
+                });
 
-                const lines = Array.from(linesSet)
-                const strip = lines.every(x => x.text.startsWith('// '))
+                const lines = Array.from(linesSet);
+                const strip = lines.every(x => x.text.startsWith('// '));
 
                 view.dispatch({
                   changes: lines.map(
                     strip
                       ? line => ({ from: line.from, to: line.from + 3, insert: '' })
-                      : line => ({ from: line.from, insert: '// ' })
-                  )
-                })
+                      : line => ({ from: line.from, insert: '// ' }),
+                  ),
+                });
 
-                return true
-              }
-            }
+                return true;
+              },
+            },
           ]),
           highlightSpanField,
           EditorState.tabSize.of(2),
           EditorView.updateListener.of(update => {
-            if (!update.docChanged) return
-            setExprDebounced(update.state.doc.toString())
+            if (!update.docChanged) return;
+            setExprDebounced(update.state.doc.toString());
           }),
           EditorView.domEventHandlers({
             focus: () => setCmHasFocus(true),
             blur: () => setCmHasFocus(false),
-          })
+          }),
         ],
         doc: expr,
       }),
     });
-    cmRef.current = cm
+    cmRef.current = cm;
 
-    forceUpdate()
-  }, [])
+    forceUpdate();
+  }, []);
 
   useEffect(() => {
-    if (!cm || cmHasFocus) return
+    if (!cm || cmHasFocus) return;
 
-    const currText = cm.state.doc.toString()
+    const currText = cm.state.doc.toString();
     if (currText !== expr) {
       cm.dispatch({
-        changes: { from: 0, to: currText.length, insert: expr }
-      })
+        changes: { from: 0, to: currText.length, insert: expr },
+      });
     }
-
-    history.replaceState({}, "", `#${encBase64(expr)}`)
-  }, [cm, cmHasFocus, expr])
+  }, [cm, cmHasFocus, expr]);
 
   useEffect(() => {
-    if (!cm) return
+    if (!cm) return;
 
     const effects: StateEffect<unknown>[] = [
-      setHighlightSpan.of(highlightNode ? { from: highlightNode.start, to: highlightNode.end } : { remove: true })
-    ]
-    cm.dispatch({ effects })
-  }, [cm, highlightNode])
+      setHighlightSpan.of(highlightNode ? { from: highlightNode.start, to: highlightNode.end } : { remove: true }),
+    ];
+    cm.dispatch({ effects });
+  }, [cm, highlightNode]);
 
-  const focusHighlightNode = useCallback((node: ParsedNodeBase) => {
-    if (!cm) return
+  const focusHighlightNode = useCallback(
+    (node: ParsedNodeBase) => {
+      if (!cm) return;
 
-    cm.dispatch({
-      selection: EditorSelection.range(node.start, node.end),
-      scrollIntoView: true,
-    })
-    cm.focus()
-  }, [cm])
+      cm.dispatch({
+        selection: EditorSelection.range(node.start, node.end),
+        scrollIntoView: true,
+      });
+      cm.focus();
+    },
+    [cm],
+  );
 
-  const exampleButtons = useMemo(() => <div className="exampleButtons">
-    Examples:
-    {examples.map(([n, e]) => <button onClick={() => setExpr(e)}>{n}</button>)}
-  </div>, [])
+  const exampleButtons = useMemo(
+    () => (
+      <div className="exampleButtons">
+        Examples:
+        {examples.map(([n, e]) => (
+          <button onClick={() => setExpr(e)}>{n}</button>
+        ))}
+      </div>
+    ),
+    [],
+  );
 
   const result = useMemo(() => {
-    let since = performance.now()
+    let since = performance.now();
     try {
-      const parseOutput = parse(expr, { onError })
-      const parseDuration = performance.now() - since
+      const parseOutput = parse(expr, parseOptions);
+      const parseDuration = performance.now() - since;
 
-      since = performance.now()
-      const body = parseOutput.ast ? toJS(parseOutput.ast) : 'undefined'
-      const toJSDuration = performance.now() - since
+      since = performance.now();
+      const body = parseOutput.ast ? toJS(parseOutput.ast, toJSOptions) : 'undefined';
+      const toJSDuration = performance.now() - since;
 
       return {
         parseOutput,
@@ -180,71 +207,91 @@ const App = () => {
         toJSDuration,
         duration: parseDuration + toJSDuration,
         error: parseOutput.error,
-      }
+      };
     } catch (error) {
-      const duration = performance.now() - since
-      console.error(error)
-      return { error, duration }
+      const duration = performance.now() - since;
+      console.error(error);
+      return { error, duration };
     }
-  }, [expr, onError])
+  }, [expr, parseOptions, toJSOptions]);
 
-  const rootNode = result.parseOutput?.ast
+  useEffect(() => {
+    history.replaceState(
+      {},
+      '',
+      `#${encBase64({
+        expression: expr,
+        parseOptions,
+        toJSOptions,
+      })}`,
+    );
+  }, [expr, parseOptions, toJSOptions]);
 
-  return <div className="app">
-    <div className="editor">
-      <h2>Input LCML Here:</h2>
-      {exampleButtons}
-      <p>
-        recoverFromError: <select
-          value={onError}
-          onChange={e => setOnError(e.currentTarget.value as any)}>
-          <option value="no">no</option>
-          <option value="recover">recover</option>
-          <option value="as-string">as-string</option>
-        </select>
-      </p>
-      <div ref={cmContainer}></div>
+  const rootNode = result.parseOutput?.ast;
 
-      <h2>Result JavaScript:</h2>
-      <ResultJS value={result.body ? `return ${result.body}` : ''} />
-    </div>
+  return (
+    <div className="app">
+      <div className="editor">
+        <h2>Input LCML Here:</h2>
+        {exampleButtons}
+        <OptionsPanel
+          parseOptions={parseOptions}
+          toJSOptions={toJSOptions}
+          setParseOptions={setParseOptions}
+          setToJSOptions={setToJSOptions}
+        />
+        <div ref={cmContainer}></div>
 
-    <div className="output">
-      <div className="messageBar">
-        Finished in {result.duration.toFixed(2)} ms
-        {'parseDuration' in result && `, parse ${result.parseDuration!.toFixed(2)} ms`}
-        {'toJSDuration' in result && `, toJS ${result.toJSDuration!.toFixed(2)} ms`}
+        <h2>Result JavaScript:</h2>
+        <ResultJS value={result.body ? `return ${result.body}` : ''} />
       </div>
 
-      {!!result.error && <div className="messageBar isError">
-        {(result.error as Error).message}
-        {result.error instanceof ParseError && (<button type="button" onClick={() => {
-          cm!.focus()
+      <div className="output">
+        <div className="messageBar">
+          Finished in {result.duration.toFixed(2)} ms
+          {'parseDuration' in result && `, parse ${result.parseDuration!.toFixed(2)} ms`}
+          {'toJSDuration' in result && `, toJS ${result.toJSDuration!.toFixed(2)} ms`}
+        </div>
 
-          const pos = EditorSelection.cursor((result.error as ParseError).position)
-          cm!.dispatch({ selection: pos })
-        }}>Goto Position</button>)}
-      </div>}
-      <pre>{JSON.stringify(result, null, 2)}</pre>
+        {!!result.error && (
+          <div className="messageBar isError">
+            {(result.error as Error).message}
+            {result.error instanceof ParseError && (
+              <button
+                type="button"
+                onClick={() => {
+                  cm!.focus();
+
+                  const pos = EditorSelection.cursor((result.error as ParseError).position);
+                  cm!.dispatch({ selection: pos });
+                }}
+              >
+                Goto Position
+              </button>
+            )}
+          </div>
+        )}
+        <pre>{JSON.stringify(result, null, 2)}</pre>
+      </div>
+
+      <div className="nodeTreeView">
+        <ActiveNode.Provider value={highlightNode}>
+          {rootNode ? (
+            <NodePresent
+              node={rootNode}
+              onMouseMove={setHighlightNode}
+              onClick={focusHighlightNode}
+              onMouseLeave={unsetHighlightNode}
+            />
+          ) : (
+            <div />
+          )}
+        </ActiveNode.Provider>
+      </div>
+
+      <div className="sidebar">{readmeNode}</div>
     </div>
+  );
+};
 
-    <div className="nodeTreeView">
-      <ActiveNode.Provider value={highlightNode}>
-        {rootNode
-          ? <NodePresent
-            node={rootNode}
-            onMouseMove={setHighlightNode}
-            onClick={focusHighlightNode}
-            onMouseLeave={unsetHighlightNode}
-          />
-          : <div />}
-      </ActiveNode.Provider>
-    </div>
-
-    <div className="sidebar">
-      {readmeNode}
-    </div>
-  </div>
-}
-
-React.render(<App />, document.querySelector('#app')!)
+React.render(<App />, document.querySelector('#app')!);

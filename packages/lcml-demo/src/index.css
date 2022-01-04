@@ -32,6 +32,14 @@ body {
   min-width: 300px;
 }
 
+.editor-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
 .output {
   grid-area: output;
   overflow: auto;
@@ -68,4 +76,31 @@ body {
 
 .cm-highlightPart {
   background-color: #f906;
+}
+
+/* ******************** */
+
+.named-box {
+  position: relative;
+  padding-left: 4px;
+  border: 2px solid #f0f0f0;
+  border-left-width: 18px;
+  border-radius: 4px;
+}
+
+.named-box::before {
+  content: attr(name);
+  width: 18px;
+  float: left;
+  color: #666;
+  writing-mode: sideways-lr;
+  font-size: 10px;
+  margin-left: -22px;
+  padding: 4px 0;
+}
+
+.named-box::after {
+  content: ' ';
+  display: block;
+  clear: both;
 }

@@ -6,7 +6,7 @@ import './NodePresent.css';
 export const ActiveNode = React.createContext<ParsedNodeBase | null>(null);
 
 const FakeNodePresent = (props: {
-  title: string | React.VNode;
+  title?: string | React.VNode;
   type?: string;
   children?: React.ComponentChildren;
   className?: string;
@@ -54,8 +54,13 @@ export const NodePresent = (props: {
       const target = ev.currentTarget as HTMLDivElement;
       const scrolling = target.closest('.nodeTreeView')!;
 
-      const cDelta = target.offsetLeft - scrolling.scrollLeft;
-      if (cDelta <= -50 || cDelta >= 50) scrolling.scrollLeft = target.offsetLeft - 20;
+      const { left } = target.getBoundingClientRect();
+      if (left <= 10) {
+        scrolling.scrollLeft = (scrolling.scrollLeft + Math.max(0, -left - 10)) / 2;
+      }
+      if (left >= 50) {
+        scrolling.scrollLeft = (scrolling.scrollLeft + left) / 2;
+      }
     },
     [node, props.onMouseMove],
   );
@@ -90,7 +95,7 @@ export const NodePresent = (props: {
       </div>
 
       {node.type === 'object' && (
-        <div className="np-properties">
+        <div className="named-box" name="properties">
           {node.properties.map((property, index) => (
             <NodePresent {...props} node={property} title={String(index)} parents={pTree} />
           ))}
@@ -99,30 +104,21 @@ export const NodePresent = (props: {
 
       {node.type === 'object-property' && (
         <>
-          <div className="np-property-key">
-            <NodePresent {...props} node={node.key} title={'(key)'} parents={pTree} />
-            {node.hasColon && (
-              <FakeNodePresent
-                title={
-                  <>
-                    (hasColon) <LocRange start={node.colonStart!} />
-                  </>
-                }
-              />
-            )}
+          <div className="named-box" name="key">
+            <NodePresent {...props} node={node.key} title="" parents={pTree} />
           </div>
-          <div className="np-property-value">
+          <div className="named-box" name="value">
             {node.value ? (
-              <NodePresent {...props} node={node.value} title={'(value)'} parents={pTree} />
+              <NodePresent {...props} node={node.value} title="" parents={pTree} />
             ) : (
-              <FakeNodePresent title="(value)" />
+              <FakeNodePresent title="(null)" />
             )}
           </div>
         </>
       )}
 
       {node.type === 'array' && (
-        <div className="np-items">
+        <div className="named-box" name="items">
           {node.items.map((item, index) => {
             const loc = node.itemsLocation[index]!;
             const title = (

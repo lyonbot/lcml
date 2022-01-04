@@ -1,9 +1,7 @@
 .np-node {
   border: 1px solid transparent;
   border-radius: 4px;
-  margin-bottom: 4px;
   padding: 4px;
-  padding-left: 24px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
