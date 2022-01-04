@@ -80,7 +80,7 @@ function internalToJS(
     case 'array':
       if (!node.length) return '[]';
       return ['[', ...node.items.map(x => opt.indent + (x ? subCall(x) : `/* empty */`) + ','), `]`].join(
-        indent + opt.lineBreak,
+        opt.lineBreak + indent,
       );
 
     case 'object':
@@ -97,7 +97,7 @@ function internalToJS(
           return `${opt.indent}${key}: ${x.value ? subCall(x.value) : 'undefined'},`;
         }),
         `}`,
-      ].join(indent + opt.lineBreak);
+      ].join(opt.lineBreak + indent);
 
     /* istanbul ignore next */
     default: {
