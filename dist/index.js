@@ -108,23 +108,28 @@ When \`{ loose: true }\` is passed to parse, these invalid LCML will become vali
 
 Loose Mode Rules:
 
-1. leading comments are ignored.
+1. leading comments are ignored, then the remainder **might** be treated as *string*
 
 2. if the beginning of LCML input looks like a **string, array or object**, 
  the loose mode will NOT work!
 
 3. \`{ ignoreUnparsedRemainder: true }\` will not work, unless loose mode is suppressed (see rule #2)
 
-4. due to rule #2, corrupted input like *\`{ hello: \`* will cause a Error. To treat it as string, set \`{ onError: 'as-string' }\` -- this can be dangerous!
+4. due to rule #2, corrupted input like *\`{ hello: \`* will cause a Error, not *string*. 
 
-5. if loose mode works successfully, parser will return \`{ looseModeEnabled: true }\`
+   - (dangerous) to treat it as string, set \`{ onError: 'as-string' }\` -- this can be confusing! the parser still outputs a *string* but it is NOT Loose Mode's credit!
 
-6. (not related to loose mode, FYI) to tell if \`{ onError: 'as-string' }\` has functioned, you shall check \`!!parseResult.error && parseResult.ast.type === 'string' && !parseResult.ast.quote\`
+5. if Loose Mode actually has functioned, parser will return \`{ looseModeEnabled: true }\`
+
+Some rarely-used notices related to the rule #4, FYI:
+
+- if \`{ onError: 'as-string' }\` is set, to tell whether it has functioned, you shall check \`!!parseResult.error && parseResult.ast.type === 'string' && !parseResult.ast.quote\` instead of \`parseResult.looseModeEnabled\`
 
 ## Integrating LCML
 
 \`\`\`ts
 import { compile, CompileOptions } from 'lcml';
+// compile = parse + toJS
 
 const options: CompileOptions = {
 
@@ -138,19 +143,20 @@ const options: CompileOptions = {
   // globalToStringMethod: "toString",
   
 };
-const result = compile('Hello, {{ user.name }}', options);
+
+const result = compile('"Hello, {{ user.name }}"', options);
 
 console.log(result.body);
 // => 'Hello, ' + toString(user.name)
 
 console.log(result.ast);
-// => { start: 0, end: 22, type: "string" }
+// => { type: "string", start: 0, end: 24 }
 
 console.log(result.expressions);
 // => [
 //      {
-//         start: 7,
-//         end: 22,
+//         start: 8,
+//         end: 23,
 //         expression: " user.name ",
 //      }
 //    ]
@@ -186,7 +192,7 @@ As presented above, option \`processExpression\` can be a callback function rece
 returns a JavaScript expression.
 
 You can read \`node.expression\`, transpile it and return new expression.
-For example, use Babel to transpile the original Expression in order to support fashion ESNext syntax.
+For example, use Babel to transpile the fashion ESNext syntax like pipeline operator.
 
 The generated JavaScript code will be affected. 
 
