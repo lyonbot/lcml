@@ -173,7 +173,7 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
     ss.precede(recoverTo.offset);
   }
 
-  if (!finished) {
+  if (!isHaltingParser() && !finished) {
     commitParseError(errorMessages[state], ss);
   }
 

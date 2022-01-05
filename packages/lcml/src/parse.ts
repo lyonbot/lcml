@@ -121,7 +121,7 @@ export function parse(str: string, opts: ParseOptions = {}) {
     // do extra check here: is EOF reached?
     // by default, treat unparsed part as error
     // but they can also be ignored
-    if (!errors.length && !stream.eof() && (mayLoose || !opts.ignoreUnparsedRemainder)) {
+    if (!stream.eof() && (mayLoose || !opts.ignoreUnparsedRemainder)) {
       // special note: when loose mode works,
       // always make a error to trigger following as-string logic
       addError(new ParseError('unexpected remainder', stream));
