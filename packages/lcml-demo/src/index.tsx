@@ -5,7 +5,7 @@ import { Line } from '@codemirror/text';
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { indentWithTab } from '@codemirror/commands';
 import { Decoration, DecorationSet, keymap } from '@codemirror/view';
-import { StateField, StateEffect, EditorSelection } from '@codemirror/state';
+import { StateField, StateEffect, EditorSelection, SelectionRange } from '@codemirror/state';
 import { ActiveNode, NodePresent } from './NodePresent';
 import './index.css';
 import { ResultJS } from './ResultJS';
@@ -20,7 +20,7 @@ const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' });
 
 const readmeNode = <article class="markdown-body" dangerouslySetInnerHTML={{ __html: marked(readme) }}></article>;
 
-const setHighlightSpan = StateEffect.define<{ from: number; to: number } | { remove: true }>();
+const setHighlightSpan = StateEffect.define<SelectionRange | { remove: true }>();
 const highlightSpanField = StateField.define<DecorationSet>({
   create() {
     return Decoration.none;
@@ -68,7 +68,7 @@ try {
   initialExpr = dec.expression;
   defaultParseOptions = { ...defaultParseOptions, ...dec.parseOptions };
   defaultToJSOptions = { ...defaultToJSOptions, ...dec.toJSOptions };
-} catch {} // eslint-disable-line no-empty
+} catch { } // eslint-disable-line no-empty
 
 const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -160,10 +160,16 @@ const App = () => {
   useEffect(() => {
     if (!cm) return;
 
+    const range = !!highlightNode && EditorSelection.range(highlightNode.start, highlightNode.end);
     const effects: StateEffect<unknown>[] = [
-      setHighlightSpan.of(highlightNode ? { from: highlightNode.start, to: highlightNode.end } : { remove: true }),
+      setHighlightSpan.of(range || { remove: true }),
     ];
+
     cm.dispatch({ effects });
+
+    const needScrolling = range && cm.visibleRanges.every(vr => vr.from > range.from || vr.to < range.to)
+    if (needScrolling) cm.scrollPosIntoView(range.from)
+
   }, [cm, highlightNode]);
 
   const focusHighlightNode = useCallback(

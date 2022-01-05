@@ -53,13 +53,20 @@ export const NodePresent = (props: {
 
       const target = ev.currentTarget as HTMLDivElement;
       const scrolling = target.closest('.nodeTreeView')!;
+      const scw = scrolling.clientWidth
 
-      const { left } = target.getBoundingClientRect();
-      if (left <= 10) {
-        scrolling.scrollLeft = (scrolling.scrollLeft + Math.max(0, -left - 10)) / 2;
+      let desiring = null as number | null
+
+      const { left, right } = target.getBoundingClientRect();
+      if (left <= 10 && (ev.clientX < scw * 0.3 || ev.clientX > right - scw * 0.3)) {
+        desiring = Math.min(0, scrolling.scrollLeft + left - 10)
       }
-      if (left >= 50) {
-        scrolling.scrollLeft = (scrolling.scrollLeft + left) / 2;
+      if (left > scw * 0.2 && ev.clientX > scw * 0.6) {
+        desiring = Math.max(0, scrolling.scrollLeft + left - 10)
+      }
+
+      if (desiring !== null) {
+        scrolling.scrollLeft = (scrolling.scrollLeft * 4 + desiring) / 5
       }
     },
     [node, props.onMouseMove],
