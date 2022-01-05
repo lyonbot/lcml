@@ -26,16 +26,16 @@ exports[`toJS should work: {
 } 1`] = `
 "{
   [\\"foo \\" + toString(( expr ))]: 1,
-  \\"bar\\": [  
-  ( test ),  
-  false,  
-  /* empty */,  
-],
-  [( sym )]: [  
-  2,  
-  3,  
-  4,  
-],
+  \\"bar\\": [
+    ( test ),
+    false,
+    /* empty */,
+  ],
+  [( sym )]: [
+    2,
+    3,
+    4,
+  ],
 }"
 `;
 
@@ -44,31 +44,31 @@ exports[`toJS should work: { compact: true } 1`] = `"{ [\\"foo \\" + toString(( 
 exports[`toJS should work: { globalToStringMethod: 'myToString' } 1`] = `
 "{
   [\\"foo \\" + myToString(( expr ))]: 1,
-  \\"bar\\": [  
-  ( test ),  
-  false,  
-  /* empty */,  
-],
-  [( sym )]: [  
-  2,  
-  3,  
-  4,  
-],
+  \\"bar\\": [
+    ( test ),
+    false,
+    /* empty */,
+  ],
+  [( sym )]: [
+    2,
+    3,
+    4,
+  ],
 }"
 `;
 
 exports[`toJS should work: {} 1`] = `
 "{
-  [\\"foo \\" + toString( expr )]: 1,
-  \\"bar\\": [  
-  ( test ),  
-  false,  
-  /* empty */,  
-],
-  [( sym )]: [  
-  2,  
-  3,  
-  4,  
-],
+  [\\"foo \\" + toString(( expr ))]: 1,
+  \\"bar\\": [
+    ( test ),
+    false,
+    /* empty */,
+  ],
+  [( sym )]: [
+    2,
+    3,
+    4,
+  ],
 }"
 `;

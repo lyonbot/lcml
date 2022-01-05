@@ -1,17 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`parse parse array: empty array 1`] = `
-Object {
-  "end": 2,
-  "items": Array [],
-  "itemsLocation": Array [],
-  "length": 0,
-  "parsedLength": 2,
-  "start": 0,
-  "type": "array",
-}
-`;
-
 exports[`parse parse expression-leading string 1`] = `
 Object {
   "end": 37,
@@ -192,55 +180,5 @@ Object {
   ],
   "start": 7,
   "type": "object",
-}
-`;
-
-exports[`parse parse object: empty object 1`] = `
-Object {
-  "end": 2,
-  "parsedLength": 2,
-  "properties": Array [],
-  "start": 0,
-  "type": "object",
-}
-`;
-
-exports[`parse parse static string: empty string 1`] = `
-Object {
-  "end": 2,
-  "isDynamic": false,
-  "parsedLength": 2,
-  "quote": "\\"",
-  "segments": Array [
-    Object {
-      "end": 1,
-      "parsedLength": 0,
-      "raw": "",
-      "start": 1,
-      "type": "string-segment",
-    },
-  ],
-  "start": 0,
-  "type": "string",
-}
-`;
-
-exports[`parse parse static string: empty string 2`] = `
-Object {
-  "end": 2,
-  "isDynamic": false,
-  "parsedLength": 2,
-  "quote": "'",
-  "segments": Array [
-    Object {
-      "end": 1,
-      "parsedLength": 0,
-      "raw": "",
-      "start": 1,
-      "type": "string-segment",
-    },
-  ],
-  "start": 0,
-  "type": "string",
 }
 `;
