@@ -1,12 +1,16 @@
-import { parse } from './parse';
-import { ParsedNumberNode } from './parseImpl/parseLiteral';
-import { ParsedArrayNode } from './parseImpl/parseArray';
-import { ParsedStringNode, ParsedStringSegmentNode } from './parseImpl/parseString';
-import { ParsedExpressionNode } from './parseImpl/parseExpression';
+import { parse, ParseOptions } from './parse';
+import {
+  ParsedArrayNode,
+  ParsedStringNode,
+  ParsedStringSegmentNode,
+  ParsedExpressionNode,
+  ParsedObjectNode,
+  ParsedNumberNode,
+} from './parseImpl/exports';
 
 describe.only('parse', () => {
-  const parseAST = (x: string) => {
-    const ans = parse(x);
+  const parseAST = (x: string, opts?: ParseOptions) => {
+    const ans = parse(x, opts);
     if (ans.error) throw ans.error;
     return ans.ast!;
   };
@@ -18,11 +22,22 @@ describe.only('parse', () => {
     expect(ast.expression).toBe(' expr ');
   });
 
-  it('parse expression-leading string', () => {
-    const ast = parseAST(' {{ expr }}, welcome ! // not-comment') as ParsedStringNode;
+  it.each<[opts: ParseOptions, willThrow: string | false]>([
+    [{ onError: 'return' }, 'remainder'],
+    [{ loose: true }, false],
+    [{ ignoreUnparsedRemainder: true }, false],
+  ])('remainder, %j', (opts, willThrow) => {
+    const input = ' {{ expr }}, welcome ! // not-comment';
+    const { ast, error, looseModeEnabled } = parse(input, opts);
 
-    expect(ast.type).toBe('string');
-    expect(ast).toMatchSnapshot();
+    if (willThrow) {
+      expect(error).toBeTruthy();
+      expect(error!.message).toContain(willThrow);
+      return;
+    }
+
+    expect(ast).toMatchSnapshot('ast');
+    expect(looseModeEnabled).toMatchSnapshot('looseModeEnabled');
   });
 
   it('parse string', () => {
@@ -124,5 +139,34 @@ describe.only('parse', () => {
 
     expect(() => parseAST(`{ "foo": // test`)).toThrowError('property value');
     expect(() => parseAST(`{ "foo": 123`)).toThrowError('right curly bracket');
+  });
+
+  it('onError: recover', () => {
+    const input = `  /* test */
+    { 
+      hello: badTokenHere,
+      world: [ 1, 2, bad token, bad again ]
+    `;
+
+    const result = parse(input, { onError: 'recover' });
+
+    expect(result.errors.length).toBe(4);
+    expect(result.errors[0].message).toContain('expect property value');
+    expect(result.errors[1].message).toContain('expect value, comma or right square bracket');
+    expect(result.errors[2].message).toContain('expect value, comma or right square bracket');
+    expect(result.errors[3].message).toContain('expect comma or right curly bracket');
+    expect(result.errors[0].position).toEqual(33);
+    expect(result.errors[1].position).toEqual(68);
+    expect(result.errors[2].position).toEqual(79);
+    expect(result.errors[3].position).toEqual(95);
+
+    const properties = (result.ast! as ParsedObjectNode).properties;
+    expect(result.ast!.type).toBe('object');
+    expect(properties).toHaveLength(2);
+    expect(properties[0].value).toBeNull();
+    expect(properties[1].value!.type).toBe('array');
+    expect((properties[1].value! as ParsedArrayNode).items).toHaveLength(3);
+
+    expect(result.ast).toMatchSnapshot();
   });
 });

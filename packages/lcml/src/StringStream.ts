@@ -74,13 +74,15 @@ export class StringStream {
    */
   skipSpaces(): number {
     const from = this.pos;
-    while (this.pos < this.raw.length) {
-      const top = this.raw[this.pos];
-      if (isWhitespaceCharacter(top)) this.pos++;
+    let np = this.pos;
+    while (np < this.raw.length) {
+      const top = this.raw[np];
+      if (isWhitespaceCharacter(top)) np++;
       else break;
     }
 
-    return this.pos - from;
+    this.precede(np - this.pos);
+    return np - from;
   }
 
   /**

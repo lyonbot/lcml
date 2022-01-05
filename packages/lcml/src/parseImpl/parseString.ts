@@ -1,4 +1,4 @@
-import { ParsedNodeBase, makeParsedNode, makePanic } from './base';
+import { ParsedNodeBase, makeParsedNode, commitParseError } from './base';
 import { parseExpression, ParsedExpressionNode } from './parseExpression';
 import { StringStream } from '../StringStream';
 
@@ -72,7 +72,8 @@ export function internalParseStringContent(stream: StringStream, quote: string):
         return finalize();
       } else {
         // expect a quote but not found, throw an error
-        return makePanic(finalize, 'expect end of string', stream, stream.raw.length);
+        commitParseError('expect end of string', stream, stream.raw.length);
+        break
       }
     }
 

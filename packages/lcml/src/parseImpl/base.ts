@@ -16,25 +16,27 @@ export function isParsedNode(x: any): x is ParsedNodeBase {
 }
 
 const defaultCtxOpts = {
-  hook: null as ((node: ParsedNodeBase) => void) | null | undefined,
+  recover: false, // if false, when met error, all remainder will be skipped
+  onNode: null as ((node: ParsedNodeBase) => void) | null,
+  onError: null as ((error: ParseError) => void) | null,
 };
 const ctxOpts = { ...defaultCtxOpts };
 
 export function startParsing(opts: Partial<typeof ctxOpts>) {
   Object.assign(ctxOpts, defaultCtxOpts, opts);
-  _isRecovering = null;
+  _isHalting = null;
 }
 export function endParsing() {
   Object.assign(ctxOpts, defaultCtxOpts);
-  _isRecovering = null;
+  _isHalting = null;
 }
 
 // while recovering,
 // array and object's parsing processes are stopped
 // and partially parsed result is generated, returned
 
-let _isRecovering: ParseError | null = null;
-export const isRecovering = () => _isRecovering;
+let _isHalting: ParseError | null = null;
+export const isHaltingParser = () => _isHalting;
 
 export function makeParsedNode<T extends ParsedNodeBase>(
   sourceStream: StringStream,
@@ -54,21 +56,16 @@ export function makeParsedNode<T extends ParsedNodeBase>(
     value: true,
   });
 
-  if (ctxOpts.hook) ctxOpts.hook(answer);
+  if (ctxOpts.onNode) ctxOpts.onNode(answer);
   return answer;
 }
 
 /**
- * if current parsing process allows recovering, this set internal `isRecovering` flag to true, call `partialFinalizer()` and returns.
- *
- * otherwise, create a new ParseError and throw it
+ * if current parsing process disallows recovering,
+ * this set internal `_isHalting` flag to true
  */
-export function makePanic<T extends ParsedNodeBase>(
-  partialFinalizer: () => T,
-  ...args: ConstructorParameters<typeof ParseError>
-) {
+export function commitParseError(...args: ConstructorParameters<typeof ParseError>) {
   const error = new ParseError(...args);
-  _isRecovering = error;
-  return partialFinalizer();
-  // throw error;
+  if (ctxOpts.onError) ctxOpts.onError(error);
+  if (!ctxOpts.recover) _isHalting = error;
 }

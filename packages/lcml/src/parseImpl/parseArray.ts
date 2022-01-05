@@ -1,4 +1,4 @@
-import { ParsedNodeBase, makeParsedNode, isRecovering, makePanic } from './base';
+import { ParsedNodeBase, makeParsedNode, isHaltingParser, commitParseError } from './base';
 import { parseComment } from './parseComment';
 import { StringStream } from '../StringStream';
 import { parseValue, ParsedValueNode } from './parseValue';
@@ -46,7 +46,8 @@ export function parseArray(stream: StringStream, top: string): ParsedArrayNode |
     });
   };
 
-  while (!isRecovering() && !finished && (ss.skipSpaces(), !ss.eof())) {
+  let metError = false;
+  while (!isHaltingParser() && !finished && (ss.skipSpaces(), !ss.eof())) {
     const top = ss.peek();
     if (top === ']') {
       ss.precede(1);
@@ -90,7 +91,16 @@ export function parseArray(stream: StringStream, top: string): ParsedArrayNode |
 
     const item = slotEmpty && parseValue(ss, top);
     if (!item) {
-      return makePanic(finalize, `expect ${slotEmpty ? 'value, ' : ''}comma or right square bracket`, ss);
+      metError = true;
+      commitParseError(`expect ${slotEmpty ? 'value, ' : ''}comma or right square bracket`, ss);
+      if (isHaltingParser()) break;
+
+      // recover
+      const skipTo = ss.indexOf([',', ']']);
+      if (!skipTo) break
+      ss.precede(skipTo.offset)
+
+      continue;
     }
 
     items[index] = item;
@@ -105,8 +115,8 @@ export function parseArray(stream: StringStream, top: string): ParsedArrayNode |
     ss.precede(item.parsedLength);
   }
 
-  if (!isRecovering() && !finished) {
-    return makePanic(finalize, 'expect right square bracket', ss);
+  if (!metError && !finished) {
+    commitParseError('expect right square bracket', ss);
   }
 
   return finalize();

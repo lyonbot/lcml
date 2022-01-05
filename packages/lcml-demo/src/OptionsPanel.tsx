@@ -64,6 +64,7 @@ export function OptionsPanel(props: Props) {
         input: value => (
           <select value={value}>
             <option value="throw">throw</option>
+            <option value="return">return</option>
             <option value="recover">recover</option>
             <option value="as-string">as-string</option>
           </select>

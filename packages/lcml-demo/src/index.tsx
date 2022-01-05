@@ -68,7 +68,7 @@ try {
   initialExpr = dec.expression;
   defaultParseOptions = { ...defaultParseOptions, ...dec.parseOptions };
   defaultToJSOptions = { ...defaultToJSOptions, ...dec.toJSOptions };
-} catch { } // eslint-disable-line no-empty
+} catch {} // eslint-disable-line no-empty
 
 const App = () => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -161,15 +161,12 @@ const App = () => {
     if (!cm) return;
 
     const range = !!highlightNode && EditorSelection.range(highlightNode.start, highlightNode.end);
-    const effects: StateEffect<unknown>[] = [
-      setHighlightSpan.of(range || { remove: true }),
-    ];
+    const effects: StateEffect<unknown>[] = [setHighlightSpan.of(range || { remove: true })];
 
     cm.dispatch({ effects });
 
-    const needScrolling = range && cm.visibleRanges.every(vr => vr.from > range.from || vr.to < range.to)
-    if (needScrolling) cm.scrollPosIntoView(range.from)
-
+    const needScrolling = range && cm.visibleRanges.every(vr => vr.from > range.from || vr.to < range.to);
+    if (needScrolling) cm.scrollPosIntoView(range.from);
   }, [cm, highlightNode]);
 
   const focusHighlightNode = useCallback(
@@ -213,12 +210,12 @@ const App = () => {
         body,
         toJSDuration,
         duration: parseDuration + toJSDuration,
-        error: parseOutput.error,
+        errors: parseOutput.errors,
       };
     } catch (error) {
       const duration = performance.now() - since;
       console.error(error);
-      return { error, duration };
+      return { errors: [error], duration };
     }
   }, [expr, parseOptions, toJSOptions]);
 
@@ -260,16 +257,16 @@ const App = () => {
           {'toJSDuration' in result && `, toJS ${result.toJSDuration!.toFixed(2)} ms`}
         </div>
 
-        {!!result.error && (
+        {result.errors.map(error => (
           <div className="messageBar isError">
-            {(result.error as Error).message}
-            {result.error instanceof ParseError && (
+            {(error as Error).message}
+            {error instanceof ParseError && (
               <button
                 type="button"
                 onClick={() => {
                   cm!.focus();
 
-                  const pos = EditorSelection.cursor((result.error as ParseError).position);
+                  const pos = EditorSelection.cursor(error.position);
                   cm!.dispatch({ selection: pos });
                 }}
               >
@@ -277,7 +274,7 @@ const App = () => {
               </button>
             )}
           </div>
-        )}
+        ))}
         <pre>{JSON.stringify(result, null, 2)}</pre>
       </div>
 

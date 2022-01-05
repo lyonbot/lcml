@@ -1,5 +1,111 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`parse onError: recover 1`] = `
+Object {
+  "end": 95,
+  "parsedLength": 78,
+  "properties": Array [
+    Object {
+      "colonStart": 31,
+      "end": 46,
+      "hasColon": true,
+      "hasTrailingComma": true,
+      "key": Object {
+        "end": 31,
+        "parsedLength": 5,
+        "raw": "hello",
+        "start": 26,
+        "type": "identifier",
+      },
+      "parsedLength": 20,
+      "start": 26,
+      "trailingCommaStart": 45,
+      "type": "object-property",
+      "value": null,
+    },
+    Object {
+      "colonStart": 58,
+      "end": 90,
+      "hasColon": true,
+      "hasTrailingComma": false,
+      "key": Object {
+        "end": 58,
+        "parsedLength": 5,
+        "raw": "world",
+        "start": 53,
+        "type": "identifier",
+      },
+      "parsedLength": 37,
+      "start": 53,
+      "type": "object-property",
+      "value": Object {
+        "end": 90,
+        "items": Array [
+          Object {
+            "end": 63,
+            "parsedLength": 1,
+            "raw": "1",
+            "start": 62,
+            "type": "number",
+            "value": 1,
+          },
+          Object {
+            "end": 66,
+            "parsedLength": 1,
+            "raw": "2",
+            "start": 65,
+            "type": "number",
+            "value": 2,
+          },
+          null,
+        ],
+        "itemsLocation": Array [
+          Object {
+            "hasTrailingComma": true,
+            "hasValue": true,
+            "trailingCommaStart": 63,
+            "valueEnd": 63,
+            "valueStart": 62,
+          },
+          Object {
+            "hasTrailingComma": true,
+            "hasValue": true,
+            "trailingCommaStart": 66,
+            "valueEnd": 66,
+            "valueStart": 65,
+          },
+          Object {
+            "hasTrailingComma": true,
+            "hasValue": false,
+            "trailingCommaStart": 77,
+            "valueEnd": 67,
+            "valueStart": 67,
+          },
+        ],
+        "length": 3,
+        "parsedLength": 30,
+        "start": 60,
+        "type": "array",
+      },
+    },
+  ],
+  "start": 17,
+  "type": "object",
+}
+`;
+
+exports[`parse parse array: empty array 1`] = `
+Object {
+  "end": 2,
+  "items": Array [],
+  "itemsLocation": Array [],
+  "length": 0,
+  "parsedLength": 2,
+  "start": 0,
+  "type": "array",
+}
+`;
+
 exports[`parse parse expression-leading string 1`] = `
 Object {
   "end": 37,
@@ -182,3 +288,153 @@ Object {
   "type": "object",
 }
 `;
+
+exports[`parse parse object: empty object 1`] = `
+Object {
+  "end": 2,
+  "parsedLength": 2,
+  "properties": Array [],
+  "start": 0,
+  "type": "object",
+}
+`;
+
+exports[`parse parse static string: empty string 1`] = `
+Object {
+  "end": 2,
+  "isDynamic": false,
+  "parsedLength": 2,
+  "quote": "\\"",
+  "segments": Array [
+    Object {
+      "end": 1,
+      "parsedLength": 0,
+      "raw": "",
+      "start": 1,
+      "type": "string-segment",
+    },
+  ],
+  "start": 0,
+  "type": "string",
+}
+`;
+
+exports[`parse parse static string: empty string 2`] = `
+Object {
+  "end": 2,
+  "isDynamic": false,
+  "parsedLength": 2,
+  "quote": "'",
+  "segments": Array [
+    Object {
+      "end": 1,
+      "parsedLength": 0,
+      "raw": "",
+      "start": 1,
+      "type": "string-segment",
+    },
+  ],
+  "start": 0,
+  "type": "string",
+}
+`;
+
+exports[`parse remainder, {"ignoreUnparsedRemainder":true} 1`] = `
+Object {
+  "end": 11,
+  "expression": " expr ",
+  "expressionEnd": 9,
+  "expressionStart": 3,
+  "parsedLength": 10,
+  "start": 1,
+  "type": "expression",
+}
+`;
+
+exports[`parse remainder, {"ignoreUnparsedRemainder":true}: ast 1`] = `
+Object {
+  "end": 11,
+  "expression": " expr ",
+  "expressionEnd": 9,
+  "expressionStart": 3,
+  "parsedLength": 10,
+  "start": 1,
+  "type": "expression",
+}
+`;
+
+exports[`parse remainder, {"ignoreUnparsedRemainder":true}: looseModeEnabled 1`] = `false`;
+
+exports[`parse remainder, {"loose":true} 1`] = `
+Object {
+  "end": 37,
+  "isDynamic": true,
+  "parsedLength": 36,
+  "quote": "",
+  "segments": Array [
+    Object {
+      "end": 1,
+      "parsedLength": 0,
+      "raw": "",
+      "start": 1,
+      "type": "string-segment",
+    },
+    Object {
+      "end": 11,
+      "expression": " expr ",
+      "expressionEnd": 9,
+      "expressionStart": 3,
+      "parsedLength": 10,
+      "start": 1,
+      "type": "expression",
+    },
+    Object {
+      "end": 37,
+      "parsedLength": 26,
+      "raw": ", welcome ! // not-comment",
+      "start": 11,
+      "type": "string-segment",
+    },
+  ],
+  "start": 1,
+  "type": "string",
+}
+`;
+
+exports[`parse remainder, {"loose":true}: ast 1`] = `
+Object {
+  "end": 37,
+  "isDynamic": true,
+  "parsedLength": 36,
+  "quote": "",
+  "segments": Array [
+    Object {
+      "end": 1,
+      "parsedLength": 0,
+      "raw": "",
+      "start": 1,
+      "type": "string-segment",
+    },
+    Object {
+      "end": 11,
+      "expression": " expr ",
+      "expressionEnd": 9,
+      "expressionStart": 3,
+      "parsedLength": 10,
+      "start": 1,
+      "type": "expression",
+    },
+    Object {
+      "end": 37,
+      "parsedLength": 26,
+      "raw": ", welcome ! // not-comment",
+      "start": 11,
+      "type": "string-segment",
+    },
+  ],
+  "start": 1,
+  "type": "string",
+}
+`;
+
+exports[`parse remainder, {"loose":true}: looseModeEnabled 1`] = `true`;

@@ -1,4 +1,4 @@
-import { ParsedNodeBase, makeParsedNode, isRecovering, makePanic } from './base';
+import { ParsedNodeBase, makeParsedNode, isHaltingParser, commitParseError } from './base';
 import { parseComment } from './parseComment';
 import { parseExpression, ParsedExpressionNode } from './parseExpression';
 import { parseString, ParsedStringNode } from './parseString';
@@ -38,6 +38,23 @@ const errorMessages: Record<LocalState, string> = {
   [LocalState.COMMA_OR_END]: `expect comma or right curly bracket`,
 };
 
+/**
+ * @param stream assume the leading token is identifier
+ */
+const tryStartPropertyNode = (stream: StringStream, top: string) => {
+  const key = parseString(stream, top) || parseExpression(stream, top) || parseIdentifier(stream, top);
+  if (!key) return;
+
+  return makeParsedNode<ParsedObjectPropertyNode>(stream, {
+    type: 'object-property',
+    key,
+    parsedLength: key.parsedLength,
+    value: null,
+    hasTrailingComma: false,
+    hasColon: false,
+  });
+};
+
 export function parseObject(stream: StringStream, top: string): ParsedObjectNode | void {
   if (top !== '{') return;
   if (stream.peek(2) === '{{') return; // weird unfinished string
@@ -57,7 +74,7 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
       properties,
     });
 
-  while (!isRecovering() && !finished && (ss.skipSpaces(), !ss.eof())) {
+  while (!isHaltingParser() && !finished && (ss.skipSpaces(), !ss.eof())) {
     const top = ss.peek();
 
     const comment = parseComment(ss, top);
@@ -73,28 +90,19 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
         break;
       }
 
-      const key = parseString(ss, top) || parseExpression(ss, top) || parseIdentifier(ss, top);
-      if (key) {
-        current = makeParsedNode<ParsedObjectPropertyNode>(ss, {
-          type: 'object-property',
-          key,
-          parsedLength: key.parsedLength,
-          value: null,
-          hasTrailingComma: false,
-          hasColon: false,
-        });
+      const nextProperty = tryStartPropertyNode(ss, top);
+      if (nextProperty) {
+        // find one
+        current = nextProperty;
         properties.push(current);
 
-        ss.precede(key.parsedLength);
+        ss.precede(nextProperty.key.parsedLength);
         state = LocalState.COLON;
         continue;
       }
-
-      return makePanic(finalize, errorMessages[state], ss);
     }
 
-    //
-    else if (state === LocalState.COLON) {
+    if (state === LocalState.COLON) {
       if (top === ':') {
         current.hasColon = true;
         current.colonStart = ss.pos;
@@ -105,12 +113,9 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
         state = LocalState.VALUE;
         continue;
       }
-
-      return makePanic(finalize, errorMessages[state], ss);
     }
 
-    //
-    else if (state === LocalState.VALUE) {
+    if (state === LocalState.VALUE) {
       const value = parseValue(ss, top);
 
       if (value) {
@@ -122,12 +127,9 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
         state = LocalState.COMMA_OR_END;
         continue;
       }
-
-      return makePanic(finalize, errorMessages[state], ss);
     }
 
-    //
-    else if (state === LocalState.COMMA_OR_END) {
+    if (state === LocalState.COMMA_OR_END) {
       if (top === '}') {
         ss.precede(1);
         finished = true;
@@ -144,13 +146,35 @@ export function parseObject(stream: StringStream, top: string): ParsedObjectNode
         state = LocalState.IDENTIFIER_OR_END;
         continue;
       }
-
-      return makePanic(finalize, errorMessages[state], ss);
     }
+
+    // not handled input
+    // commit a error and try recovering
+
+    commitParseError(errorMessages[state], ss);
+    const recoverTo = ss.indexOf([',', state !== LocalState.COLON ? ':' : '', '}']);
+    if (!recoverTo) break;
+
+    if (recoverTo.needle === ':') {
+      // if colon found, try to compose a property
+      const nextProperty = tryStartPropertyNode(ss, top);
+      if (nextProperty) {
+        current = nextProperty;
+        properties.push(current);
+      } else {
+        // make a blackhole
+        current = {} as ParsedObjectPropertyNode;
+      }
+      state = LocalState.COLON;
+    } else {
+      state = LocalState.COMMA_OR_END;
+    }
+
+    ss.precede(recoverTo.offset);
   }
 
-  if (!isRecovering() && !finished) {
-    return makePanic(finalize, errorMessages[state], ss);
+  if (!finished) {
+    commitParseError(errorMessages[state], ss);
   }
 
   return finalize();

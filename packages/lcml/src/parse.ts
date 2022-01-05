@@ -2,7 +2,7 @@ import { parseComment } from './parseImpl/parseComment';
 import { parseValue } from './parseImpl/parseValue';
 import { ParseError } from './ParseError';
 import { StringStream } from './StringStream';
-import { endParsing, isRecovering, startParsing } from './parseImpl/base';
+import { endParsing, isHaltingParser, startParsing } from './parseImpl/base';
 import { ParsedExpressionNode } from './parseImpl/exports';
 import { internalParseStringContent } from './parseImpl/parseString';
 
@@ -33,12 +33,13 @@ export interface ParseOptions {
    * when error occurs
    *
    * - `"throw"` (default) - a ParseError will be thrown
-   * - `"recover"` - error and partial-parsed result will be return together without throwing
+   * - `"return"` - stop parsing. the ParseError will be returned along with partially-parsed ast
+   * - `"recover"` - try to continue parsing. mulitple `ParseError`s will be returned along with partially-parsed ast 
    * - `"as-string"` - discard all parsed structures and treat whole input as a string with expressions
    *
    * @default "throw"
    */
-  onError?: 'throw' | 'recover' | 'as-string';
+  onError?: 'throw' | 'return' | 'recover' | 'as-string';
 }
 
 export type ParseResult = ReturnType<typeof parse>;
@@ -50,12 +51,19 @@ export type ParseResult = ReturnType<typeof parse>;
  */
 export function parse(str: string, opts: ParseOptions = {}) {
   const expressions = [] as ParsedExpressionNode[];
+  const errors = [] as ParseError[];
 
   try {
+    const addError = (error: ParseError): void => {
+      errors.push(error);
+    };
+
     startParsing({
-      hook: node => {
+      recover: opts.onError === 'recover',
+      onNode: node => {
         if (node.type === 'expression') expressions.push(node as ParsedExpressionNode);
       },
+      onError: addError,
     });
 
     let stream = new StringStream(str);
@@ -74,7 +82,6 @@ export function parse(str: string, opts: ParseOptions = {}) {
 
     const actualStart = stream.pos;
 
-    let error: ParseError | null = null;
     let isInputEmpty = false;
 
     if (stream.eof()) {
@@ -102,10 +109,9 @@ export function parse(str: string, opts: ParseOptions = {}) {
 
       stream.precede(ast.parsedLength);
       stream.skipSpaces();
-      error = isRecovering();
     } else {
       // nothing parsed, we shall throw a error
-      error = new ParseError('invalid input', stream);
+      addError(new ParseError('invalid input', stream));
     }
 
     // see README the "Loose Mode" part's Note
@@ -115,14 +121,14 @@ export function parse(str: string, opts: ParseOptions = {}) {
     // do extra check here: is EOF reached?
     // by default, treat unparsed part as error
     // but they can also be ignored
-    if (!error && !stream.eof() && (mayLoose || !opts.ignoreUnparsedRemainder)) {
+    if (!errors.length && !stream.eof() && (mayLoose || !opts.ignoreUnparsedRemainder)) {
       // special note: when loose mode works,
       // always make a error to trigger following as-string logic
-      error = new ParseError('unexpected remainder', stream);
+      addError(new ParseError('unexpected remainder', stream));
     }
 
     // now convert
-    const asString = !!error && (mayLoose || opts.onError === 'as-string');
+    const asString = !!errors.length && (mayLoose || opts.onError === 'as-string');
     if (asString) {
       // discard all parsed structures
       // treat whole input as string
@@ -130,12 +136,12 @@ export function parse(str: string, opts: ParseOptions = {}) {
       stream.precede(actualStart);
       ast = internalParseStringContent(stream, '');
 
-      if (mayLoose) error = null;
+      if (mayLoose) errors.splice(0); // remove all errors
     }
 
     // finally throw error if needed
-    if ((opts.onError || 'throw') === 'throw') {
-      throw error;
+    if (errors.length && (opts.onError || 'throw') === 'throw') {
+      throw errors[0]!;
     }
 
     return {
@@ -143,7 +149,8 @@ export function parse(str: string, opts: ParseOptions = {}) {
       expressions,
       actualStart,
       end: actualStart + (ast ? ast.parsedLength : 0),
-      error,
+      error: errors[0] as ParseError | null,
+      errors,
       looseModeEnabled: asString && mayLoose,
     };
   } finally {
