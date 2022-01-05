@@ -4,8 +4,8 @@ import { toJS, parse, ParseOptions, ParseError, ParsedNodeBase, ToJSOptions } fr
 import { Line } from '@codemirror/text';
 import { EditorState, EditorView, basicSetup } from '@codemirror/basic-setup';
 import { indentWithTab } from '@codemirror/commands';
-import { Decoration, DecorationSet, keymap } from '@codemirror/view';
-import { StateField, StateEffect, EditorSelection, SelectionRange } from '@codemirror/state';
+import { keymap } from '@codemirror/view';
+import { StateEffect, EditorSelection } from '@codemirror/state';
 import { ActiveNode, NodePresent } from './NodePresent';
 import './index.css';
 import { ResultJS } from './ResultJS';
@@ -15,41 +15,24 @@ import readme from 'lcml/README.md';
 import { marked } from 'marked';
 import debounce from 'lodash.debounce';
 import { OptionsPanel } from './OptionsPanel';
-
-const highlightSpan = Decoration.mark({ class: 'cm-highlightPart' });
+import { decBase64, encBase64 } from './base64';
+import { highlightSpanField, setHighlightSpan } from './highlightSpan';
+import { errorMarksField, setErrorMarks } from './errorMark';
 
 const readmeNode = <article class="markdown-body" dangerouslySetInnerHTML={{ __html: marked(readme) }}></article>;
-
-const setHighlightSpan = StateEffect.define<SelectionRange | { remove: true }>();
-const highlightSpanField = StateField.define<DecorationSet>({
-  create() {
-    return Decoration.none;
-  },
-  update(decorations, tr) {
-    decorations = decorations.map(tr.changes);
-    for (const e of tr.effects) {
-      if (e.is(setHighlightSpan)) {
-        decorations = decorations.update({ filter: () => false });
-        if (!('remove' in e.value)) {
-          decorations = decorations.update({ add: [highlightSpan.range(e.value.from, e.value.to)] });
-        }
-      }
-    }
-    return decorations;
-  },
-  provide: f => EditorView.decorations.from(f),
-});
-
-const encBase64 = (s: any) =>
-  btoa(Array.from(new TextEncoder().encode(JSON.stringify(s)), x => String.fromCharCode(x)).join(''));
-
-const decBase64 = (s: string) =>
-  JSON.parse(new TextDecoder().decode(Uint8Array.from(Array.from(atob(s), x => x.charCodeAt(0)))));
 
 const examples: [string, string][] = [
   ['Object', `/* comments are supported */\n\n{\n  foo: "hello {{ user.name }}",\n  bar: {{ some.obj }}\n}`],
   ['Array', `[ 1, "string", {{ user }} ]`],
   ['Whole Expression', `{{ ctx.getRequest() }}`],
+  [
+    'Corrupted Input',
+    `  /* test */
+  { 
+    hello: badTokenHere,
+    world: [ 1, 2, bad token, bad again ]
+  `,
+  ],
 ];
 
 let initialExpr = examples[0][1];
@@ -128,6 +111,7 @@ const App = () => {
             },
           ]),
           highlightSpanField,
+          errorMarksField,
           EditorState.tabSize.of(2),
           EditorView.updateListener.of(update => {
             if (!update.docChanged) return;
@@ -230,6 +214,14 @@ const App = () => {
       })}`,
     );
   }, [expr, parseOptions, toJSOptions]);
+
+  const errorsWithPos = (result.errors as ParseError[]).filter(x => x && x.position);
+  useEffect(() => {
+    if (!cm) return;
+    cm.dispatch({
+      effects: [setErrorMarks.of(errorsWithPos.map(x => [x.position, x.message]))],
+    });
+  }, [cm, errorsWithPos.map(y => y.position + ':' + y.message).join(';;')]);
 
   const rootNode = result.parseOutput?.ast;
 

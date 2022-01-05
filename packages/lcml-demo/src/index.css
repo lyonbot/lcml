@@ -78,6 +78,22 @@ body {
   background-color: #f906;
 }
 
+.cm-errorMark {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  text-align: center;
+  vertical-align: middle;
+  background-color: #f30;
+  color: #fff;
+  line-height: 1em;
+  border-radius: 100%;
+}
+
+.cm-errorMark::after {
+  content: '×';
+}
+
 /* ******************** */
 
 .named-box {
