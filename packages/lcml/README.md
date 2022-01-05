@@ -1,26 +1,31 @@
 # LCML -- JSON with expressions
 
-[![npm](https://img.shields.io/npm/v/lcml)](https://www.npmjs.com/package/lcml)
-![npm bundle size](https://img.shields.io/bundlephobia/min/lcml) ![npm type definitions](https://img.shields.io/npm/types/lcml) ![dependencies](https://img.shields.io/badge/dependencies-0-green)
+[![npm](https://img.shields.io/npm/v/lcml)](https://www.npmjs.com/package/lcml) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/lcml) ![npm type definitions](https://img.shields.io/npm/types/lcml) ![dependencies](https://img.shields.io/badge/dependencies-0-green)
 
 Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a superset of human readable JSON.
 
 [ [👯 Try it Now](https://lyonbot.github.io/lcml/) | [💻 GitHub](https://github.com/lyonbot/lcml) | [📓 LCML Syntax](https://github.com/lyonbot/lcml/tree/main/packages/lcml#lcml-syntax) | [📓 Integrating LCML](https://github.com/lyonbot/lcml/tree/main/packages/lcml#integrating-lcml) ]
 
+| Highlights |     |
+|------------|-----|
+| 🤓 loose mode | 💪 error-tolerant (recover from errors) |
+| 🌲 parse and output AST | 👨‍🎓 type information is inferred
+| 🎼 output formatted JavaScript | 🔨 expression processing hooks 
+
+
+## Have a Glimpse
+
 | Written in LCML           | Output JavaScript               | Inferred Type Information |
 | ------------------------- | ------------------------------- | ------------------------- |
-| `{{ foo.bar }}`           | `foo.bar`                       | unknown                   |
 | `3.14159`                 | `3.14159`                       | number                    |
-| `[1, 2, 3]`               | `[1, 2, 3]`                     | array with 3 numbers      |
+| `[1, 2, {{ dice() }}]`               | `[1, 2, dice()]`                     | array with 2 numbers + 1 expression      |
 | `"hello {{ user.name }}"` | `"hello" + toString(user.name)` | string                    |
+| `{{ foo.bar }}`           | `foo.bar`                       | expression                   |
 
-- The `{{ expression }}` can be in string, array, object (as key or value).
-- Comments are supported.
-
-More complex examples:
+Here is a loooong LCML example:
 
 ```js
-// written in LCML syntax
+// this whole text is written in LCML
 // human-readable JSON with {{ expression }} inside:
 {
   name: "John {{ lib.genLastName() }}",  // in string
@@ -55,18 +60,16 @@ And every part's type information is inferred:
     [1] number
     [2] boolean
     [3] unknown
-  [[( lib.sym )]] string       // note: dynamic key might inaccurate
+  [[( lib.sym )]] string
 ```
-
-- The `toString` wrapper can be configured and renamed.
-- Can transform / transpile the expressions before generating the JavaScript code.
-- Type information is inferred and recorded.
 
 ## LCML Syntax
 
 LCML syntax is based on JSON syntax, with `{{ expression }}` and comments supported.
 
-You can use `{{ expression }}`:
+We support `/* block comment */` and `// line-comment`
+
+You can use `{{ expression }}` in many places:
 
 - in string
 - as array item
