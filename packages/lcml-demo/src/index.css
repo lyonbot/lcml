@@ -93,7 +93,9 @@ body {
   width: 18px;
   float: left;
   color: #666;
-  writing-mode: sideways-lr;
+  writing-mode: vertical-rl;
+  transform-origin: center center;
+  transform: rotate(180deg);
   font-size: 10px;
   margin-left: -22px;
   padding: 4px 0;
