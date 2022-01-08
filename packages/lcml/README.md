@@ -1,16 +1,22 @@
-# LCML -- JSON with expressions
+# LCML
 
 [![npm](https://img.shields.io/npm/v/lcml)](https://www.npmjs.com/package/lcml) ![npm bundle size](https://img.shields.io/bundlephobia/minzip/lcml) ![npm type definitions](https://img.shields.io/npm/types/lcml) ![dependencies](https://img.shields.io/badge/dependencies-0-green)
 
-Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a superset of human readable JSON.
+**LCML is JSON with expressions** -- or in other word, **type-safe mustache for JSON**.
+
+You can use `{{ expression }}` in LCML to notate **dynamic values**.
+
+LCML is a DSL that compiles to JavaScript. Its syntax is extended from JSON. LCML stands for Low-Code Markup Langunage.
 
 [ [👯 Try it Now](https://lyonbot.github.io/lcml/) | [💻 GitHub](https://github.com/lyonbot/lcml) | [📓 LCML Syntax](https://github.com/lyonbot/lcml/tree/main/packages/lcml#lcml-syntax) | [📓 Integrating LCML](https://github.com/lyonbot/lcml/tree/main/packages/lcml#integrating-lcml) ]
 
 | Highlights |     |
 |------------|-----|
-| 🤓 loose mode | 💪 error-tolerant (recover from errors) |
-| 🌲 parse and output AST | 👨‍🎓 type information is inferred
-| 🎼 output formatted JavaScript | 🔨 expression processing hooks 
+| ⭕ easy to learn | How to write LCML? <br/> 1. write JSON<br /> 2. replace some values / objects / arrays with `{{ expression }}`
+| 💪 error-tolerant | better than JSON, we can handle corrputed and incompleted LCML / corrupted JSON. <br/> we also provide **loose mode** to make LCML friendly to newbies
+| 👨‍🎓 type-safe | LCML-parser outputs AST and tells you the data's type structure. <br/> so you can validate the type before actually evaluating it.
+| 🎼 output JavaScript | we compile LCML into JavaScript. <br /> meanwhile, you can process `{{ expression }}` with custom hook.
+| 🌲 completed AST | with `parse()` you can get the *abstract syntax tree* to read the type information, do source-mapping, locate declarations and more.
 
 
 ## Have a Glimpse
@@ -22,11 +28,12 @@ Low-Code Markup Language (DSL) presents values with Dynamic Expressions. It is a
 | `"hello {{ user.name }}"` | `"hello" + toString(user.name)` | string                    |
 | `{{ foo.bar }}`           | `foo.bar`                       | expression                   |
 
-Here is a loooong LCML example:
+Here is a longer LCML example:
 
 ```js
 // this whole text is written in LCML
-// human-readable JSON with {{ expression }} inside:
+// first of all, you can write comments!
+// then you can write {{ expression }} everywhere
 {
   name: "John {{ lib.genLastName() }}",  // in string
   info: {{ lib.genInfo() }},  // as property value
@@ -67,7 +74,11 @@ And every part's type information is inferred:
 
 LCML syntax is based on JSON syntax, with `{{ expression }}` and comments supported.
 
+### Comments
+
 We support `/* block comment */` and `// line-comment`
+
+### Expressions
 
 You can use `{{ expression }}` in many places:
 
@@ -77,14 +88,14 @@ You can use `{{ expression }}` in many places:
 - as property key
 - as the whole LCML
 
-### Loose Mode
+## Loose Mode
 
-When `{ loose: true }` is passed to parse, these invalid LCML will become valid strings:
+When `{ loose: true }` is passed to `parse()` or `compile()`, these LCML will be treated as strings:
 
 | LCML | Default Mode | Loose Mode (`loose: true`) |
 |------|--------------|------------|
-| `{{ user.name }}, Welcome` | Error: unexpected remainder | treated as string `"{{ user.name }}, Welcome"` |
-| `Hello, {{ user.name }}` | Error: invalid input (at "H") | treated as string `"Hello, {{ user.name }}"` |
+| `{{ user.name }}, Welcome` | Error: unexpected remainder | treated as dynamic string `"{{ user.name }}, Welcome"` |
+| `Hello, {{ user.name }}` | Error: invalid input (at "H") | treated as dynamic string `"Hello, {{ user.name }}"` |
 | `/* corrupted */ {{ user` | Error: expect end of expression | treated as string `"{{ user"` |
 
 Loose Mode Rules:
