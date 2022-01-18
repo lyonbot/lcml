@@ -88,6 +88,11 @@ You can use `{{ expression }}` in many places:
 - as property key
 - as the whole LCML
 
+To avoid conflicts, you can use more than 2 curly-brackets to wrap the expression.
+
+- √ Correct: `{{{ user.name }}}`, `{{{{{ system.Info }}}}}`, `{{ { name: user.name } }}`
+- ☹ Wrong: `{{{ user.name }}` (mismatched curly-bracket count)
+
 ## Loose Mode
 
 When `{ loose: true }` is passed to `parse()` or `compile()`, these LCML will be treated as strings:

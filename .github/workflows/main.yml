@@ -28,6 +28,7 @@ jobs:
         npm install -g pnpm
         rm pnpm-lock.yaml
         pnpm install
+        npm test
         npm run build
 
         # cleanup for github pages

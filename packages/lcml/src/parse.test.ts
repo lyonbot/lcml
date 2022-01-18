@@ -20,6 +20,17 @@ describe.only('parse', () => {
 
     expect(ast.type).toBe('expression');
     expect(ast.expression).toBe(' expr ');
+
+    // more than 2 curly brackets
+    const ast2 = parseAST(' {{{ expr }}}') as ParsedExpressionNode;
+
+    expect(ast2.type).toBe('expression');
+    expect(ast2.expression).toBe(' expr ');
+    expect(ast2.leftBracket).toBe('{{{');
+    expect(ast2.rightBracket).toBe('}}}');
+
+    // mismatched curly brackets
+    expect(() => parseAST('{{{ expr }}')).toThrowError();
   });
 
   it.each<[opts: ParseOptions, willThrow: string | false]>([
