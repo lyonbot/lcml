@@ -106,42 +106,6 @@ Object {
 }
 `;
 
-exports[`parse parse expression-leading string 1`] = `
-Object {
-  "end": 37,
-  "isDynamic": true,
-  "parsedLength": 36,
-  "quote": "",
-  "segments": Array [
-    Object {
-      "end": 1,
-      "parsedLength": 0,
-      "raw": "",
-      "start": 1,
-      "type": "string-segment",
-    },
-    Object {
-      "end": 11,
-      "expression": " expr ",
-      "expressionEnd": 9,
-      "expressionStart": 3,
-      "parsedLength": 10,
-      "start": 1,
-      "type": "expression",
-    },
-    Object {
-      "end": 37,
-      "parsedLength": 26,
-      "raw": ", welcome ! // not-comment",
-      "start": 11,
-      "type": "string-segment",
-    },
-  ],
-  "start": 1,
-  "type": "string",
-}
-`;
-
 exports[`parse parse object 1`] = `
 Object {
   "end": 112,
@@ -339,18 +303,6 @@ Object {
 }
 `;
 
-exports[`parse remainder, {"ignoreUnparsedRemainder":true} 1`] = `
-Object {
-  "end": 11,
-  "expression": " expr ",
-  "expressionEnd": 9,
-  "expressionStart": 3,
-  "parsedLength": 10,
-  "start": 1,
-  "type": "expression",
-}
-`;
-
 exports[`parse remainder, {"ignoreUnparsedRemainder":true}: ast 1`] = `
 Object {
   "end": 11,
@@ -364,42 +316,6 @@ Object {
 `;
 
 exports[`parse remainder, {"ignoreUnparsedRemainder":true}: looseModeEnabled 1`] = `false`;
-
-exports[`parse remainder, {"loose":true} 1`] = `
-Object {
-  "end": 37,
-  "isDynamic": true,
-  "parsedLength": 36,
-  "quote": "",
-  "segments": Array [
-    Object {
-      "end": 1,
-      "parsedLength": 0,
-      "raw": "",
-      "start": 1,
-      "type": "string-segment",
-    },
-    Object {
-      "end": 11,
-      "expression": " expr ",
-      "expressionEnd": 9,
-      "expressionStart": 3,
-      "parsedLength": 10,
-      "start": 1,
-      "type": "expression",
-    },
-    Object {
-      "end": 37,
-      "parsedLength": 26,
-      "raw": ", welcome ! // not-comment",
-      "start": 11,
-      "type": "string-segment",
-    },
-  ],
-  "start": 1,
-  "type": "string",
-}
-`;
 
 exports[`parse remainder, {"loose":true}: ast 1`] = `
 Object {
